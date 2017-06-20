@@ -76,21 +76,23 @@ if(!defined('APP_URL')
     || !defined('USER_HASH')
     || !defined('USER_URL')
 ) {
-    echo '<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>';
+    die('<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>');
 }
 
 
-if($empty($_POST) && isset($_POST['code'])) {
+if(empty($_POST) && isset($_POST['code'])) {
 
     $redirect_uri   = (isset($_GET['redirect_uri'] ) ? $_GET['redirect_uri']    : null );
     $client_id      = (isset($_GET['client_id']    ) ? $_GET['client_id']       : null );
     if(verify_code($redirect_uri, $client_id, $code)){
         //TODO this needs correct headers;
-        echo USER_URL;
+        header('Content-Type: application/x-www-form-urlencoded');
+        echo 'me='.USER_URL;
+        exit();
     }
 
 
-} elseif($empty($_POST)) {
+} elseif(empty($_POST)) {
     $me             = (isset($_GET['me']           ) ? $_GET['me']              : null );  
     $redirect_uri   = (isset($_GET['redirect_uri'] ) ? $_GET['redirect_uri']    : null );
     $response_type  = (isset($_GET['response_type']) ? $_GET['response_type']   : 'id' );
@@ -155,9 +157,11 @@ if(verify_password($me, $pass_input)) {
     }
     $final_redir .= 'code=' . $code . '&state=' . $state . '&me=' . $me;
 
-    // TODO redirect back
+    // redirect back
+    header('Location: ' . $find_redir);
 } else {
-    //TODO bad password
+    die('login failed');
+    //TODO make this look nicer
 }
 
 
