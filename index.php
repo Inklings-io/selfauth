@@ -40,6 +40,7 @@ function verify_code($redirect_uri, $client_id, $code)
     $t2 = time() - 300;
     $m = intval(date('i', $t) / 5) * 5;
     $m2 = intval(date('i', $t2) / 5) * 5;
+
     if( md5(APP_KEY . USER_URL . $redirect_uri . $client_id . date('Y-M-d G:', $t) . $m) == $code 
             || md5(APP_KEY . USER_URL . $redirect_uri . $client_id . date('Y-M-d G:', $t2) . $m2) == $code ) {
         return true;
@@ -67,16 +68,18 @@ if(!defined('APP_URL')
     die('<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>');
 }
 
+if(!empty($_POST) && isset($_POST['code'])) {
 
-if(empty($_POST) && isset($_POST['code'])) {
-
-    $redirect_uri   = (isset($_GET['redirect_uri'] ) ? $_GET['redirect_uri']    : null );
-    $client_id      = (isset($_GET['client_id']    ) ? $_GET['client_id']       : null );
+    $redirect_uri   = (isset($_POST['redirect_uri'] ) ? $_POST['redirect_uri']    : null );
+    $client_id      = (isset($_POST['client_id']    ) ? $_POST['client_id']       : null );
+    $code           = (isset($_POST['code']         ) ? $_POST['code']            : null );
     if(verify_code($redirect_uri, $client_id, $code)){
         //TODO this needs correct headers;
         header('Content-Type: application/x-www-form-urlencoded');
         echo 'me='.USER_URL;
         exit();
+    } else {
+        die('code invalid');
     }
 
 
@@ -138,7 +141,7 @@ if(verify_password($me, $pass_input)) {
     $code = generate_code($redirect_uri, $client_id);
 
     $final_redir = $redirect_uri;
-    if(strpos('?', $redirect_uri) === FALSE){
+    if(strpos($redirect_uri, '?') === FALSE){
         $final_redir .= '?';
     } else {
         $final_redir .= '&';
@@ -146,7 +149,8 @@ if(verify_password($me, $pass_input)) {
     $final_redir .= 'code=' . $code . '&state=' . $state . '&me=' . $me;
 
     // redirect back
-    header('Location: ' . $find_redir);
+    header('Location: ' . $final_redir);
+    exit();
 } else {
     die('login failed');
     //TODO make this look nicer
