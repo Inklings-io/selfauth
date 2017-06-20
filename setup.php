@@ -10,13 +10,8 @@ Fill in the file config.php with the following content
     $app_url = 'http' . ($_SERVER[HTTPS]? 's' : '') . '://' . $_SERVER[HTTP_HOST] .  str_replace('setup.php', '', $_SERVER[REQUEST_URI]);
     $app_key = md5(time().$_SERVER[HTTP_HOST].$_SERVER[REQUEST_URI]);
     $user = $_POST['username'];
-    $user_tmp = preg_replace('/^https?:\/\//', '', $_POST['username']);
-    $arr = explode('/', $user_tmp);
-    if(count($arr) == 1){
-        $user_tmp = $arr[0];
-    } elseif(count($arr) == 2 && empty($arr[1])){
-        $user_tmp = $arr[0];
-    }
+
+    $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
     $pass = md5($user_tmp . $_POST['password'] . $app_key);
  ?>
 &lt;?php 

@@ -50,23 +50,11 @@ function verify_code($redirect_uri, $client_id, $code)
 
 function verify_password($url, $pass)
 {
-    $input_user = preg_replace('/^https?:\/\//', '', $url);
-    $arr = explode('/', $input_user);
-    if(count($arr) == 1){
-        $input_user = $arr[0];
-    } elseif(count($arr) == 2 && empty($arr[1])){
-        $input_user = $arr[0];
-    }
+    $input_user = trim(preg_replace('/^https?:\/\//', '', $url), '/');
 
     $hash = md5($input_user . $pass . APP_KEY);
 
-    $configured_user = preg_replace('/^https?:\/\//', '', USER_URL);
-    $arr = explode('/', $configured_user);
-    if(count($arr) == 1){
-        $configured_user = $arr[0];
-    } elseif(count($arr) == 2 && empty($arr[1])){
-        $configured_user = $arr[0];
-    }
+    $configured_user = trim(preg_replace('/^https?:\/\//', '', USER_URL), '/');
 
     return ($input_user == $configured_user && $hash == USER_HASH);
 }
