@@ -60,10 +60,10 @@ function verify_password($url, $pass)
     return ($input_user == $configured_user && $hash == USER_HASH);
 }
 
-if(!defined('APP_URL') 
-    || !defined('APP_KEY')
-    || !defined('USER_HASH')
-    || !defined('USER_URL')
+if((!defined('APP_URL') || APP_URL == '')
+    || (!defined('APP_KEY') || APP_KEY == '')
+    || (!defined('USER_HASH') || USER_HASH == '')
+    || (!defined('USER_URL') || USER_URL == '')
 ) {
     die('<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>');
 }
