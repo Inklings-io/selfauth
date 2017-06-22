@@ -7,8 +7,9 @@
 Fill in the file config.php with the following content
 <pre>
 <?php
-    $app_url = 'http' . ($_SERVER[HTTPS]? 's' : '') . '://' . $_SERVER[HTTP_HOST] .  str_replace('setup.php', '', $_SERVER[REQUEST_URI]);
-    $app_key = md5(time().$_SERVER[HTTP_HOST].$_SERVER[REQUEST_URI]);
+    $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'] 
+      . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
+    $app_key = md5(time().$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
     $user = $_POST['username'];
 
     $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
