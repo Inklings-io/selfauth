@@ -114,6 +114,7 @@ if(!empty($_POST) && isset($_POST['code'])) {
         <input type="hidden" name="client_id" value="<?php echo $client_id?>" />
         <label for="password">Password:</label>
         <input type="password" name="password" id="password" />
+        <input type="submit" name="submit" value="Submit">
     </form>
 
     </body></html>
