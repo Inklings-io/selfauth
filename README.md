@@ -6,9 +6,9 @@ self-hosted auth_endpoint using simple login mechanism
 Setup
 -----
 
-To set up Selfauth, create a folder on your webserver and add the files in this repository to it. You can name the folder anything you like, but in this example we will work with `auth` under `https://example.com/auth/`.
+To set up Selfauth, create a folder on your webserver and add the files in this repository to it. You can name the folder anything you like, but in this example we will work with 'auth' under `https://example.com/auth/`.
 
-1. Create `auth` on your webserver and add at least `index.php` and `setup.php`.
+1. Create a folder called 'auth' on your webserver and add at least `index.php` and `setup.php`.
 
 2. Go to `https://example.com/auth/setup.php` and fill in the form: pick the URL you're trying to log in for (in our case `https://example.com`) and choose a password.
 
