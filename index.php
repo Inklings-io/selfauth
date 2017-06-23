@@ -1,5 +1,10 @@
 <?php
-require_once __DIR__ . '/config.php';
+$configfile= __DIR__ . '/config.php';
+if(file_exists($configfile)){
+    require_once $configfile;
+} else {
+    die('<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>');
+}
 
 
 //temp code generation to protect against CSRF, this is only going to be valid for between 2 and 4 minutes
