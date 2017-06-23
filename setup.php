@@ -52,7 +52,7 @@ define('USER_URL', '$user');";
 
 	$file_written = false;
 
-    if(is_writeable($configfile) && !$configured()){
+    if(is_writeable($configfile) && !$configured){
 
 		$handle = fopen($configfile, 'w');
 
