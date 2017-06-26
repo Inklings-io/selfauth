@@ -1,11 +1,32 @@
 <?php
+function error_page($header, $body)
+{
+    die("<html>
+    <head>
+        <style>
+            .error{
+                width:100%;
+                text-align:center;
+                margin-top:10%;
+            }
+        </style>
+        <title>Error: $header</title>
+    </head>
+    <body>
+        <div class='error'>
+            <h1>Error: $header</h1>
+            <p>$body</p>
+        </div>
+    </body>
+</html>");
+}
+
 $configfile= __DIR__ . '/config.php';
 if(file_exists($configfile)){
     require_once $configfile;
 } else {
-    die('<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>');
+    error_page('Configuration Error', 'Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.');
 }
-
 
 //temp code generation to protect against CSRF, this is only going to be valid for between 2 and 4 minutes
 function generate_csrf_code($redirect_uri, $client_id, $state)
@@ -70,7 +91,7 @@ if((!defined('APP_URL') || APP_URL == '')
     || (!defined('USER_HASH') || USER_HASH == '')
     || (!defined('USER_URL') || USER_URL == '')
 ) {
-    die('<html><body>Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.</body></html>');
+    error_page('Configuration Error', 'Endpoint not configured correctly, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.');
 }
 
 if(!empty($_POST) && isset($_POST['code'])) {
@@ -84,7 +105,7 @@ if(!empty($_POST) && isset($_POST['code'])) {
         echo 'me='.USER_URL;
         exit();
     } else {
-        die('code invalid');
+        error_page('Verification Failed', 'Given Code Was Invalid');
     }
 
 
@@ -99,12 +120,35 @@ if(!empty($_POST) && isset($_POST['code'])) {
 
     //TODO check all fields
     if(empty($redirect_uri)){
-        //TODO make a better error page
-        die('<html><body>No redirect_uri given</body></html>');
+        error_page('Incomplete Request', 'There was an error with the request.  No redirect_uri field given.');
+
     }
     $csrf_code = generate_csrf_code($redirect_uri, $client_id, $state);
 ?>
-    <html><body>
+    <html>
+    <head>
+        <title>Login</title>
+        <style>
+h1{text-align:center;margin-top:3%;}
+body {text-align:center;}
+pre {width:400px; margin-left:auto; margin-right:auto;margin-bottom:50px; background-color:#FFC; min-height:1em;}
+
+form{ 
+margin-left:auto;
+width:300px;
+margin-right:auto;
+text-align:center;
+margin-top:20px;
+border:solid 1px black;
+padding:20px;
+}
+.form-line{ margin-top:5px;}
+.submit{width:100%}
+
+        </style>
+    </head>
+    <body>
+    <h1>Authenticate</h1>
     <div>You are attempting to login with client <pre><?php echo $client_id?></pre></div>
     <div>It is requesting the following scopes <pre><?php echo $scope?></pre></div>
     <div>After login you will be redirected to  <pre><?php echo $redirect_uri?></pre></div>
@@ -117,9 +161,8 @@ if(!empty($_POST) && isset($_POST['code'])) {
         <input type="hidden" name="state" value="<?php echo $state?>" />
         <input type="hidden" name="scope" value="<?php echo $scope?>" />
         <input type="hidden" name="client_id" value="<?php echo $client_id?>" />
-        <label for="password">Password:</label>
-        <input type="password" name="password" id="password" />
-        <input type="submit" name="submit" value="Submit">
+        <div class="form-line"><label for="password">Password:</label> <input type="password" name="password" id="password" /></div>
+        <div class="form-line"><input class="submit" type="submit" name="submit" value="Submit" /></div>
     </form>
 
     </body></html>
@@ -139,7 +182,7 @@ $scope          = (isset($_POST['scope']        ) ? $_POST['scope']           : 
 //TODO check all fields
 
 if(!verify_csrf_code($redirect_uri, $client_id, $state, $csrf_code)){
-    die('invalid csrf code, please try again');
+    error_page('Invalid csrf code','Usually this means you took too long to log in. Please try again.');
 }
 
 // verify login
@@ -158,8 +201,7 @@ if(verify_password($me, $pass_input)) {
     header('Location: ' . $final_redir);
     exit();
 } else {
-    die('login failed');
-    //TODO make this look nicer
+    error_page('Login Failed', 'Invalid username or password.');
 }
 
 
