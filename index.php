@@ -140,9 +140,9 @@ if(!empty($_POST) && isset($_POST['code'])) {
     if(empty($state)){
         error_page('Incomplete Request', 'There was an error with the request.  No "state" field given.');
     }
-    if($response_type == 'code'){
-        error_page('Not Supported', 'Selfauth currently only supports "response_type=id" (authentication).');
-    }
+    //if($response_type == 'code'){
+        //error_page('Not Supported', 'Selfauth currently only supports "response_type=id" (authentication).');
+    //}
     if($response_type != 'code' && $response_type != 'id'){
         error_page('Invalid Request', 'Unknown value encountered. "response_type" must be "id" or "code".');
     }
