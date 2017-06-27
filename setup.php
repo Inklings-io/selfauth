@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>
-Setup SelfAuth
+Setup Selfauth
 </title>
 <style>
 h1{text-align:center;margin-top:5%;}
@@ -22,8 +22,8 @@ padding:20px;
 </style>
 </head>
 <body>
-<h1>Setup SelfAuth</h1>
-<div class="instructions">In order to configure selfauth, you need to fill in a few values, this page helps generate those options.</div>
+<h1>Setup Selfauth</h1>
+<div class="instructions">In order to configure Selfauth, you need to fill in a few values, this page helps generate those options.</div>
 <?php if(isset($_POST['username'])):?>
 <div>
 <?php define('RANDOM_BYTE_COUNT', 30);

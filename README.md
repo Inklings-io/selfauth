@@ -1,7 +1,9 @@
-# selfauth
+# Selfauth
 self-hosted auth_endpoint using simple login mechanism
 
-# WARNING: this is in very early development and explicitly NOT RECOMMENDED to be used (yet)
+# Warning: while Selfauth will work with old versions of PHP, the ability to get sufficiently random strings was not added until version 5.6.  While older versions are not completely insecure, it is strongly recommended you upgrade to a newer version of PHP.
+
+# Warning: currently selfauth only supports authentication, not authorization.  Meaning scopes will not work yet.  If you need access to these features, it is advisable to use something else for now.
 
 Setup
 -----
