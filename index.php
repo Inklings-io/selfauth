@@ -52,23 +52,23 @@ function verify_csrf_code($redirect_uri, $client_id, $state, $code)
 
 
 //temp code generation, this is only going to be valid for between 5 and 10 minutes
-function generate_code($redirect_uri, $client_id)
+function generate_code($redirect_uri, $client_id, $scope)
 {
     $t = time();
     $m = intval(date('i', $t) / 5) * 5;
-    return md5(APP_KEY . USER_URL . $redirect_uri . $client_id . date('Y-M-d G:', $t) . $m);
+    return md5(APP_KEY . USER_URL . $redirect_uri . $client_id . $scope . date('Y-M-d G:', $t) . $m);
 
 }
 
-function verify_code($redirect_uri, $client_id, $code)
+function verify_code($redirect_uri, $client_id, $scope, $code)
 {
     $t = time();
     $t2 = time() - 300;
     $m = intval(date('i', $t) / 5) * 5;
     $m2 = intval(date('i', $t2) / 5) * 5;
 
-    if( md5(APP_KEY . USER_URL . $redirect_uri . $client_id . date('Y-M-d G:', $t) . $m) == $code 
-            || md5(APP_KEY . USER_URL . $redirect_uri . $client_id . date('Y-M-d G:', $t2) . $m2) == $code ) {
+    if( md5(APP_KEY . USER_URL . $redirect_uri . $client_id . $scope . date('Y-M-d G:', $t) . $m) == $code 
+            || md5(APP_KEY . USER_URL . $redirect_uri . $client_id . $scope . date('Y-M-d G:', $t2) . $m2) == $code ) {
         return true;
 
     }
@@ -98,11 +98,20 @@ if(!empty($_POST) && isset($_POST['code'])) {
 
     $redirect_uri   = (isset($_POST['redirect_uri'] ) ? $_POST['redirect_uri']    : null );
     $client_id      = (isset($_POST['client_id']    ) ? $_POST['client_id']       : null );
-    $code           = (isset($_POST['code']         ) ? $_POST['code']            : null );
-    if(verify_code($redirect_uri, $client_id, $code)){
-        //TODO this needs correct headers;
-        header('Content-Type: application/x-www-form-urlencoded');
-        echo 'me='.USER_URL;
+    $fullcode       = (isset($_POST['code']         ) ? $_POST['code']            : null );
+    
+    //send code = something like 0123456789abcdef:create,edit
+    $code_parts = explode(':', $full_code);
+    if(isset($code_parts[1])){
+        $scope = explode(',', $code_parts[1]);
+    }
+    $code = $code_parts[0];
+
+    if(verify_code($redirect_uri, $client_id, ($scope?: ''), $code)){
+        //TODO support scope
+        header('Content-Type: application/json');
+        $json = array('me' => USER_URL);
+        echo json_encode($json);
         exit();
     } else {
         error_page('Verification Failed', 'Given Code Was Invalid');
@@ -110,18 +119,32 @@ if(!empty($_POST) && isset($_POST['code'])) {
 
 
 } elseif(empty($_POST)) {
-    $me             = (isset($_GET['me']           ) ? $_GET['me']              : null );  
-    $redirect_uri   = (isset($_GET['redirect_uri'] ) ? $_GET['redirect_uri']    : null );
-    $response_type  = (isset($_GET['response_type']) ? $_GET['response_type']   : 'id' );
-    $state          = (isset($_GET['state']        ) ? $_GET['state']           : ''   );
-    $client_id      = (isset($_GET['client_id']    ) ? $_GET['client_id']       : null );
-    $scope          = (isset($_GET['scope']        ) ? $_GET['scope']           : ''   );
+    $me             = (isset($_GET['me']           ) ? $_GET['me']                          : null );  
+    $redirect_uri   = (isset($_GET['redirect_uri'] ) ? $_GET['redirect_uri']                : null );
+    $response_type  = (isset($_GET['response_type']) ? strtolower($_GET['response_type'])   : 'id' );
+    $state          = (isset($_GET['state']        ) ? $_GET['state']                       : null );
+    $client_id      = (isset($_GET['client_id']    ) ? $_GET['client_id']                   : null );
+    $scope          = (isset($_GET['scope']        ) ? $_GET['scope']                       : ''   );
     //TODO how would we support scope?
 
-    //TODO check all fields
+    //TODO check scope and response_type make sense once they are supported
+    if(empty($me)){
+        error_page('Incomplete Request', 'There was an error with the request.  No "me" field given.');
+    }
+    if(empty($client_id)){
+        error_page('Incomplete Request', 'There was an error with the request.  No "client_id" field given.');
+    }
     if(empty($redirect_uri)){
-        error_page('Incomplete Request', 'There was an error with the request.  No redirect_uri field given.');
-
+        error_page('Incomplete Request', 'There was an error with the request.  No "redirect_uri" field given.');
+    }
+    if(empty($state)){
+        error_page('Incomplete Request', 'There was an error with the request.  No "state" field given.');
+    }
+    if($response_type == 'code'){
+        error_page('Not Supported', 'Selfauth currently only supports "response_type=id" (authentication).');
+    }
+    if($response_type != 'code' && $response_type != 'id'){
+        error_page('Invalid Request', 'Unknown value encountered. "response_type" must be "id" or "code".');
     }
     $csrf_code = generate_csrf_code($redirect_uri, $client_id, $state);
 ?>
@@ -177,17 +200,36 @@ $redirect_uri   = (isset($_POST['redirect_uri'] ) ? $_POST['redirect_uri']    : 
 $response_type  = (isset($_POST['response_type']) ? $_POST['response_type']   : 'id' );
 $state          = (isset($_POST['state']        ) ? $_POST['state']           : ''   );
 $client_id      = (isset($_POST['client_id']    ) ? $_POST['client_id']       : null );
-$scope          = (isset($_POST['scope']        ) ? $_POST['scope']           : ''   );
+$scope          = (isset($_POST['scope']        ) ? $_POST['scope']           : '' );
 
-//TODO check all fields
+//TODO check scope and response_type make sense once they are supported
 
 if(!verify_csrf_code($redirect_uri, $client_id, $state, $csrf_code)){
     error_page('Invalid csrf code','Usually this means you took too long to log in. Please try again.');
 }
+if(empty($me)){
+    error_page('Incomplete Request', 'There was an error with the request.  No "me" field given.');
+}
+if(empty($client_id)){
+    error_page('Incomplete Request', 'There was an error with the request.  No "client_id" field given.');
+}
+if(empty($redirect_uri)){
+    error_page('Incomplete Request', 'There was an error with the request.  No "redirect_uri" field given.');
+}
+if(empty($state)){
+    error_page('Incomplete Request', 'There was an error with the request.  No "state" field given.');
+}
+if(empty($pass_input)){
+    error_page('Incomplete Request', 'No Password Given.');
+}
 
 // verify login
 if(verify_password($me, $pass_input)) {
-    $code = generate_code($redirect_uri, $client_id);
+    $code = generate_code($redirect_uri, $client_id, $scope);
+
+    $scope_encoded = preg_replace('/ +/', ',', trim($scope));
+
+    $fullcode = $code . ':' . $scope_encoded;
 
     $final_redir = $redirect_uri;
     if(strpos($redirect_uri, '?') === FALSE){
@@ -195,7 +237,7 @@ if(verify_password($me, $pass_input)) {
     } else {
         $final_redir .= '&';
     }
-    $final_redir .= 'code=' . $code . '&state=' . $state . '&me=' . $me;
+    $final_redir .= 'code=' . $fullcode . '&state=' . $state . '&me=' . $me;
 
     // redirect back
     header('Location: ' . $final_redir);
