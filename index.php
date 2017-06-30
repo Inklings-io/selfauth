@@ -44,7 +44,11 @@ function verify_signed_code($key, $message, $code)
     if (time() > $expires) return false;
     $body = $message . $expires . $code_parts[2];
     $signature = hash_hmac('sha256', $body, $key);
-    return $signature === $code_parts[1];
+    if (function_exists('hash_equals')) {
+        return hash_equals($signature, $code_parts[1]);
+    } else {
+        return $signature === $code_parts[1];
+    }
 }
 
 function verify_password($url, $pass)
