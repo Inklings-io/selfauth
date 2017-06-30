@@ -28,51 +28,28 @@ if(file_exists($configfile)){
     error_page('Configuration Error', 'Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.');
 }
 
-//temp code generation to protect against CSRF, this is only going to be valid for between 2 and 4 minutes
-function generate_csrf_code($redirect_uri, $client_id, $state)
+// Signed codes always have an time-to-live, by default 1 year (31536000 seconds).
+function create_signed_code($key, $message, $ttl = 31536000, $appended_data = '')
 {
-    $t = time();
-    $m = intval(date('i', $t) / 2) * 2;
-    return md5(APP_KEY . $client_id . $redirect_uri . $state . date('Y-M-d G:', $t) . $m);
-
+    $expires = time() + $ttl;
+    $body = $message . $expires . $appended_data;
+    $signature = hash_hmac('sha256', $body, $key);
+    return dechex($expires) . ':' . $signature . ':' . $appended_data;
 }
 
-function verify_csrf_code($redirect_uri, $client_id, $state, $code)
+function verify_signed_code($key, $message, $code)
 {
-    $t = time();
-    $t2 = time() - 120;
-    $m = intval(date('i', $t) / 2) * 2;
-    $m2 = intval(date('i', $t2) / 2) * 2;
-    if( md5(APP_KEY . $client_id . $redirect_uri . $state .  date('Y-M-d G:', $t) . $m) == $code 
-            || md5(APP_KEY . $client_id . $redirect_uri . $state . date('Y-M-d G:', $t2) . $m2) == $code ) {
-        return true;
+    $code_parts = explode(':', $code, 3);
+    if (count($code_parts) !== 3) return false;
+    $expires = hexdec($code_parts[0]);
+    if (time() > $expires) return false;
+    $body = $message . $expires . $code_parts[2];
+    $signature = hash_hmac('sha256', $body, $key);
+    if (function_exists('hash_equals')) {
+        return hash_equals($signature, $code_parts[1]);
+    } else {
+        return $signature === $code_parts[1];
     }
-    return false;
-}
-
-
-//temp code generation, this is only going to be valid for between 5 and 10 minutes
-function generate_code($redirect_uri, $client_id, $scope)
-{
-    $t = time();
-    $m = intval(date('i', $t) / 5) * 5;
-    return md5(APP_KEY . USER_URL . $redirect_uri . $client_id . $scope . date('Y-M-d G:', $t) . $m);
-
-}
-
-function verify_code($redirect_uri, $client_id, $scope, $code)
-{
-    $t = time();
-    $t2 = time() - 300;
-    $m = intval(date('i', $t) / 5) * 5;
-    $m2 = intval(date('i', $t2) / 5) * 5;
-
-    if( md5(APP_KEY . USER_URL . $redirect_uri . $client_id . $scope . date('Y-M-d G:', $t) . $m) == $code 
-            || md5(APP_KEY . USER_URL . $redirect_uri . $client_id . $scope . date('Y-M-d G:', $t2) . $m2) == $code ) {
-        return true;
-
-    }
-    return false;
 }
 
 function verify_password($url, $pass)
@@ -98,14 +75,9 @@ if(!empty($_POST) && isset($_POST['code'])) {
 
     $redirect_uri   = (isset($_POST['redirect_uri'] ) ? $_POST['redirect_uri']    : null );
     $client_id      = (isset($_POST['client_id']    ) ? $_POST['client_id']       : null );
-    $fullcode       = (isset($_POST['code']         ) ? $_POST['code']            : null );
-    
-    //send code = something like 0123456789abcdef:create,edit
-    $code_parts = explode(':', $fullcode);
-    $code = $code_parts[0];
-    $scope_encoded = isset($code_parts[1]) ? $code_parts[1] : '';
+    $code           = (isset($_POST['code']         ) ? $_POST['code']            : null );
 
-    if(verify_code($redirect_uri, $client_id, $scope_encoded, $code)){
+    if(verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code)){
         //TODO support scope
         header('Content-Type: application/json');
         $json = array('me' => USER_URL);
@@ -144,7 +116,7 @@ if(!empty($_POST) && isset($_POST['code'])) {
     if($response_type != 'code' && $response_type != 'id'){
         error_page('Invalid Request', 'Unknown value encountered. "response_type" must be "id" or "code".');
     }
-    $csrf_code = generate_csrf_code($redirect_uri, $client_id, $state);
+    $csrf_code = create_signed_code(APP_KEY, $client_id . $redirect_uri . $state, 2 * 60);
 ?>
     <html>
     <head>
@@ -202,7 +174,7 @@ $scope          = (isset($_POST['scope']        ) ? $_POST['scope']           : 
 
 //TODO check scope and response_type make sense once they are supported
 
-if(!verify_csrf_code($redirect_uri, $client_id, $state, $csrf_code)){
+if(!verify_signed_code(APP_KEY, $client_id . $redirect_uri . $state, $csrf_code)){
     error_page('Invalid csrf code','Usually this means you took too long to log in. Please try again.');
 }
 if(empty($me)){
@@ -225,9 +197,7 @@ if(empty($pass_input)){
 if(verify_password($me, $pass_input)) {
     $scope_encoded = preg_replace('/ +/', ',', trim($scope));
 
-    $code = generate_code($redirect_uri, $client_id, $scope_encoded);
-
-    $fullcode = $code . ':' . $scope_encoded;
+    $code = create_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, 5 * 60, $scope_encoded);
 
     $final_redir = $redirect_uri;
     if(strpos($redirect_uri, '?') === FALSE){
@@ -236,7 +206,7 @@ if(verify_password($me, $pass_input)) {
         $final_redir .= '&';
     }
     $final_redir .= http_build_query(array(
-        'code' => $fullcode,
+        'code' => $code,
         'state' => $state,
         'me' => $me
     ));
