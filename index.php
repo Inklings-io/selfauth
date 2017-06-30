@@ -101,13 +101,11 @@ if(!empty($_POST) && isset($_POST['code'])) {
     $fullcode       = (isset($_POST['code']         ) ? $_POST['code']            : null );
     
     //send code = something like 0123456789abcdef:create,edit
-    $code_parts = explode(':', $full_code);
-    if(isset($code_parts[1])){
-        $scope = explode(',', $code_parts[1]);
-    }
+    $code_parts = explode(':', $fullcode);
     $code = $code_parts[0];
+    $scope_encoded = isset($code_parts[1]) ? $code_parts[1] : '';
 
-    if(verify_code($redirect_uri, $client_id, ($scope?: ''), $code)){
+    if(verify_code($redirect_uri, $client_id, $scope_encoded, $code)){
         //TODO support scope
         header('Content-Type: application/json');
         $json = array('me' => USER_URL);
@@ -225,9 +223,9 @@ if(empty($pass_input)){
 
 // verify login
 if(verify_password($me, $pass_input)) {
-    $code = generate_code($redirect_uri, $client_id, $scope);
-
     $scope_encoded = preg_replace('/ +/', ',', trim($scope));
+
+    $code = generate_code($redirect_uri, $client_id, $scope_encoded);
 
     $fullcode = $code . ':' . $scope_encoded;
 
