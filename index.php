@@ -28,6 +28,7 @@ if(file_exists($configfile)){
     error_page('Configuration Error', 'Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.');
 }
 
+// Signed codes always have an time-to-live, by default 1 year (31536000 seconds).
 function create_signed_code($key, $message, $ttl = 31536000, $appended_data = '')
 {
     $expires = time() + $ttl;
