@@ -235,7 +235,11 @@ if(verify_password($me, $pass_input)) {
     } else {
         $final_redir .= '&';
     }
-    $final_redir .= 'code=' . $fullcode . '&state=' . $state . '&me=' . $me;
+    $final_redir .= http_build_query(array(
+        'code' => $fullcode,
+        'state' => $state,
+        'me' => $me
+    ));
 
     // redirect back
     header('Location: ' . $final_redir);
