@@ -175,13 +175,13 @@ padding:20px;
     <div>After login you will be redirected to  <pre><?php echo $redirect_uri?></pre></div>
 
     <form method="POST" action="">
-        <input type="hidden" name="_csrf" value="<?php echo $csrf_code?>" />
-        <input type="hidden" name="redirect_uri" value="<?php echo $redirect_uri?>" />
-        <input type="hidden" name="me" value="<?php echo $me?>" />
-        <input type="hidden" name="response_type" value="<?php echo $response_type?>" />
-        <input type="hidden" name="state" value="<?php echo $state?>" />
-        <input type="hidden" name="scope" value="<?php echo $scope?>" />
-        <input type="hidden" name="client_id" value="<?php echo $client_id?>" />
+        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_code)?>" />
+        <input type="hidden" name="redirect_uri" value="<?php echo htmlspecialchars($redirect_uri)?>" />
+        <input type="hidden" name="me" value="<?php echo htmlspecialchars($me)?>" />
+        <input type="hidden" name="response_type" value="<?php echo htmlspecialchars($response_type)?>" />
+        <input type="hidden" name="state" value="<?php echo htmlspecialchars($state)?>" />
+        <input type="hidden" name="scope" value="<?php echo htmlspecialchars($scope)?>" />
+        <input type="hidden" name="client_id" value="<?php echo htmlspecialchars($client_id)?>" />
         <div class="form-line"><label for="password">Password:</label> <input type="password" name="password" id="password" /></div>
         <div class="form-line"><input class="submit" type="submit" name="submit" value="Submit" /></div>
     </form>
