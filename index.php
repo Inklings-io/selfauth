@@ -78,11 +78,49 @@ if(!empty($_POST) && isset($_POST['code'])) {
     $code           = (isset($_POST['code']         ) ? $_POST['code']            : null );
 
     if(verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code)){
-        //TODO support scope
-        header('Content-Type: application/json');
-        $json = array('me' => USER_URL);
-        echo json_encode($json);
-        exit();
+
+        // A regular expression for extracting */*, application/*, application/json, and application/x-www-form-urlencoded, as well as their respective q values.
+        $regex = '/(?<=^|,)\s*(\*\/\*|application\/\*|application\/x-www-form-urlencoded|application\/json)\s*(?:[^,]*?;\s*q\s*=\s*([0-9.]+))?\s*(?:,|$)/';
+        $out = preg_match_all($regex, $_SERVER['HTTP_ACCEPT'], $matches);
+        $types = array_combine($matches[1], $matches[2]);
+
+        // Find the q value for application/json.
+        if (array_key_exists('application/json', $types)) {
+            $json = $types['application/json'] === '' ? 1 : $types['application/json'];
+        } elseif (array_key_exists('application/*', $types)) {
+            $json = $types['application/*'] === '' ? 1 : $types['application/*'];
+        } elseif (array_key_exists('*/*', $types)) {
+            $json = $types['*/*'] === '' ? 1 : $types['*/*'];
+        } else {
+            $json = 0;
+        }
+        $json = floatval($json);
+
+        // Find the q value for application/x-www-form-urlencoded.
+        if (array_key_exists('application/x-www-form-urlencoded', $types)) {
+            $form = $types['application/x-www-form-urlencoded'] === '' ? 1 : $types['application/x-www-form-urlencoded'];
+        } elseif (array_key_exists('application/*', $types)) {
+            $form = $types['application/*'] === '' ? 1 : $types['application/*'];
+        } elseif (array_key_exists('*/*', $types)) {
+            $form = $types['*/*'] === '' ? 1 : $types['*/*'];
+        } else {
+            $form = 0;
+        }
+        $form = floatval($form);
+
+        // Respond in the correct way.
+        if ($json === 0 && $form === 0) {
+            $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0';
+            header($protocol . ' 406 Not Acceptable');
+            error_page('No Accepted Response Types', 'The client accepts neither JSON nor Form encoded responses.');
+        } elseif ($json >= $form) {
+            header('Content-Type: application/json');
+            exit(json_encode(array('me' => USER_URL)));
+        } else {
+            header('Content-Type: application/x-www-form-urlencoded');
+            exit(http_build_query(array('me' => USER_URL)));
+        }
+
     } else {
         error_page('Verification Failed', 'Given Code Was Invalid');
     }
