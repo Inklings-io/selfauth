@@ -1,6 +1,8 @@
 <?php
-function error_page($header, $body)
+function error_page($header, $body, $http = '400 Bad Request')
 {
+    $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0';
+    header($protocol . ' ' . $http);
     die("<html>
     <head>
         <style>
@@ -71,92 +73,131 @@ if((!defined('APP_URL') || APP_URL == '')
     error_page('Configuration Error', 'Endpoint not configured correctly, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.');
 }
 
-if(!empty($_POST) && isset($_POST['code'])) {
+// First handle verification of codes.
+$code = filter_input(INPUT_POST, 'code', FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => '@^[0-9a-f]+:[0-9a-f]{64}:@')));
 
-    $redirect_uri   = (isset($_POST['redirect_uri'] ) ? $_POST['redirect_uri']    : null );
-    $client_id      = (isset($_POST['client_id']    ) ? $_POST['client_id']       : null );
-    $code           = (isset($_POST['code']         ) ? $_POST['code']            : null );
+if ($code !== null) {
 
-    if(verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code)){
+    $redirect_uri = filter_input(INPUT_POST, 'redirect_uri', FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED);
+    $client_id = filter_input(INPUT_POST, 'client_id', FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED);
 
-        // A regular expression for extracting */*, application/*, application/json, and application/x-www-form-urlencoded, as well as their respective q values.
-        $regex = '/(?<=^|,)\s*(\*\/\*|application\/\*|application\/x-www-form-urlencoded|application\/json)\s*(?:[^,]*?;\s*q\s*=\s*([0-9.]+))?\s*(?:,|$)/';
-        $out = preg_match_all($regex, $_SERVER['HTTP_ACCEPT'], $matches);
-        $types = array_combine($matches[1], $matches[2]);
-
-        // Find the q value for application/json.
-        if (array_key_exists('application/json', $types)) {
-            $json = $types['application/json'] === '' ? 1 : $types['application/json'];
-        } elseif (array_key_exists('application/*', $types)) {
-            $json = $types['application/*'] === '' ? 1 : $types['application/*'];
-        } elseif (array_key_exists('*/*', $types)) {
-            $json = $types['*/*'] === '' ? 1 : $types['*/*'];
-        } else {
-            $json = 0;
-        }
-        $json = floatval($json);
-
-        // Find the q value for application/x-www-form-urlencoded.
-        if (array_key_exists('application/x-www-form-urlencoded', $types)) {
-            $form = $types['application/x-www-form-urlencoded'] === '' ? 1 : $types['application/x-www-form-urlencoded'];
-        } elseif (array_key_exists('application/*', $types)) {
-            $form = $types['application/*'] === '' ? 1 : $types['application/*'];
-        } elseif (array_key_exists('*/*', $types)) {
-            $form = $types['*/*'] === '' ? 1 : $types['*/*'];
-        } else {
-            $form = 0;
-        }
-        $form = floatval($form);
-
-        // Respond in the correct way.
-        if ($json === 0 && $form === 0) {
-            $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0';
-            header($protocol . ' 406 Not Acceptable');
-            error_page('No Accepted Response Types', 'The client accepts neither JSON nor Form encoded responses.');
-        } elseif ($json >= $form) {
-            header('Content-Type: application/json');
-            exit(json_encode(array('me' => USER_URL)));
-        } else {
-            header('Content-Type: application/x-www-form-urlencoded');
-            exit(http_build_query(array('me' => USER_URL)));
-        }
-
-    } else {
+    // Exit if there are errors in the client supplied data.
+    if (!(is_string($code) && is_string($redirect_uri) && is_string($client_id) && verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code))) {
         error_page('Verification Failed', 'Given Code Was Invalid');
     }
 
+    // A regular expression for extracting */*, application/*, application/json, and application/x-www-form-urlencoded, as well as their respective q values.
+    $regex = '/(?<=^|,)\s*(\*\/\*|application\/\*|application\/x-www-form-urlencoded|application\/json)\s*(?:[^,]*?;\s*q\s*=\s*([0-9.]+))?\s*(?:,|$)/';
+    $out = preg_match_all($regex, $_SERVER['HTTP_ACCEPT'], $matches);
+    $types = array_combine($matches[1], $matches[2]);
 
-} elseif(empty($_POST)) {
-    $me             = (isset($_GET['me']           ) ? $_GET['me']                          : null );  
-    $redirect_uri   = (isset($_GET['redirect_uri'] ) ? $_GET['redirect_uri']                : null );
-    $response_type  = (isset($_GET['response_type']) ? strtolower($_GET['response_type'])   : 'id' );
-    $state          = (isset($_GET['state']        ) ? $_GET['state']                       : null );
-    $client_id      = (isset($_GET['client_id']    ) ? $_GET['client_id']                   : null );
-    $scope          = (isset($_GET['scope']        ) ? $_GET['scope']                       : ''   );
-    //TODO how would we support scope?
+    // Find the q value for application/json.
+    if (array_key_exists('application/json', $types)) {
+        $json = $types['application/json'] === '' ? 1 : $types['application/json'];
+    } elseif (array_key_exists('application/*', $types)) {
+        $json = $types['application/*'] === '' ? 1 : $types['application/*'];
+    } elseif (array_key_exists('*/*', $types)) {
+        $json = $types['*/*'] === '' ? 1 : $types['*/*'];
+    } else {
+        $json = 0;
+    }
+    $json = floatval($json);
 
-    //TODO check scope and response_type make sense once they are supported
-    if(empty($me)){
-        error_page('Incomplete Request', 'There was an error with the request.  No "me" field given.');
+    // Find the q value for application/x-www-form-urlencoded.
+    if (array_key_exists('application/x-www-form-urlencoded', $types)) {
+        $form = $types['application/x-www-form-urlencoded'] === '' ? 1 : $types['application/x-www-form-urlencoded'];
+    } elseif (array_key_exists('application/*', $types)) {
+        $form = $types['application/*'] === '' ? 1 : $types['application/*'];
+    } elseif (array_key_exists('*/*', $types)) {
+        $form = $types['*/*'] === '' ? 1 : $types['*/*'];
+    } else {
+        $form = 0;
     }
-    if(empty($client_id)){
-        error_page('Incomplete Request', 'There was an error with the request.  No "client_id" field given.');
+    $form = floatval($form);
+
+    // Respond in the correct way.
+    if ($json === 0 && $form === 0) {
+        error_page('No Accepted Response Types', 'The client accepts neither JSON nor Form encoded responses.', '406 Not Acceptable');
+    } elseif ($json >= $form) {
+        header('Content-Type: application/json');
+        exit(json_encode(array('me' => USER_URL)));
+    } else {
+        header('Content-Type: application/x-www-form-urlencoded');
+        exit(http_build_query(array('me' => USER_URL)));
     }
-    if(empty($redirect_uri)){
-        error_page('Incomplete Request', 'There was an error with the request.  No "redirect_uri" field given.');
+}
+
+// If this is not verification, collect all the client supplied data. Exit on errors.
+
+$me = filter_input(INPUT_GET, 'me', FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED);
+$client_id = filter_input(INPUT_GET, 'client_id', FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED);
+$redirect_uri = filter_input(INPUT_GET, 'redirect_uri', FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED);
+$state = filter_input(INPUT_GET, 'state', FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => '@^[\x20-\x7E]*$@')));
+$response_type = filter_input(INPUT_GET, 'response_type', FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => '@^(id|code)$@')));
+$scope = filter_input(INPUT_GET, 'scope', FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => '@^[\x21\x23-\x5B\x5D-\x7E]*$@')));
+
+if (!is_string($me)) { // me is either omitted or not a valid URL.
+    error_page('Faulty Request', 'There was an error with the request. The "me" field is invalid.');
+}
+if (!is_string($client_id)) { // client_id is either omitted or not a valid URL.
+    error_page('Faulty Request', 'There was an error with the request. The "client_id" field is invalid.');
+}
+if (!is_string($redirect_uri)) { // redirect_uri is either omitted or not a valid URL.
+    error_page('Faulty Request', 'There was an error with the request. The "redirect_uri" field is invalid.');
+}
+if ($state === false) { // state contains invalid characters.
+    error_page('Faulty Request', 'There was an error with the request. The "state" field contains invalid data.');
+}
+if ($response_type === false) { // response_type is given as something other than id or code.
+    error_page('Faulty Request', 'There was an error with the request. The "response_type" field must be "id" or "code".');
+}
+if ($scope === false) { // scope contains invalid characters.
+    error_page('Faulty Request', 'There was an error with the request. The "scope" field contains invalid data.');
+}
+
+// If the user submitted a password, get ready to redirect back to the callback.
+
+$pass_input = filter_input(INPUT_POST, 'password', FILTER_UNSAFE_RAW);
+
+if ($pass_input !== null) {
+
+    $csrf_code = filter_input(INPUT_POST, '_csrf', FILTER_UNSAFE_RAW);
+
+    // Exit if the CSRF does not verify.
+    if ($csrf_code === null || !verify_signed_code(APP_KEY, $client_id . $redirect_uri . $state, $csrf_code)) {
+        error_page('Invalid csrf code', 'Usually this means you took too long to log in. Please try again.');
     }
-    if(empty($state)){
-        error_page('Incomplete Request', 'There was an error with the request.  No "state" field given.');
+
+    // Exit if the password does not verify.
+    if (!verify_password($me, $pass_input)) {
+        error_page('Login Failed', 'Invalid username or password.');
     }
-    //if($response_type == 'code'){
-        //error_page('Not Supported', 'Selfauth currently only supports "response_type=id" (authentication).');
-    //}
-    if($response_type != 'code' && $response_type != 'id'){
-        error_page('Invalid Request', 'Unknown value encountered. "response_type" must be "id" or "code".');
+
+    $code = create_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, 5 * 60, $scope);
+
+    $final_redir = $redirect_uri;
+    if(strpos($redirect_uri, '?') === false){
+        $final_redir .= '?';
+    } else {
+        $final_redir .= '&';
     }
-    $csrf_code = create_signed_code(APP_KEY, $client_id . $redirect_uri . $state, 2 * 60);
-?>
-    <html>
+    $final_redir .= http_build_query(array(
+        'code' => $code,
+        'state' => $state,
+        'me' => $me
+    ));
+
+    // Redirect back.
+    header('Location: ' . $final_redir, true, 302);
+    exit();
+}
+
+// If neither password nor a code was submitted, we need to ask the user to authenticate.
+
+$csrf_code = create_signed_code(APP_KEY, $client_id . $redirect_uri . $state, 2 * 60);
+
+?><!doctype html>
+<html>
     <head>
         <title>Login</title>
         <style>
@@ -180,80 +221,15 @@ padding:20px;
     </head>
     <body>
     <h1>Authenticate</h1>
-    <div>You are attempting to login with client <pre><?php echo $client_id?></pre></div>
-    <div>It is requesting the following scopes <pre><?php echo $scope?></pre></div>
-    <div>After login you will be redirected to  <pre><?php echo $redirect_uri?></pre></div>
+    <div>You are attempting to login with client <pre><?php echo $client_id; ?></pre></div>
+    <div>It is requesting the following scopes <pre><?php echo htmlspecialchars($scope); ?></pre></div>
+    <div>After login you will be redirected to  <pre><?php echo $redirect_uri; ?></pre></div>
 
     <form method="POST" action="">
-        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_code)?>" />
-        <input type="hidden" name="redirect_uri" value="<?php echo htmlspecialchars($redirect_uri)?>" />
-        <input type="hidden" name="me" value="<?php echo htmlspecialchars($me)?>" />
-        <input type="hidden" name="response_type" value="<?php echo htmlspecialchars($response_type)?>" />
-        <input type="hidden" name="state" value="<?php echo htmlspecialchars($state)?>" />
-        <input type="hidden" name="scope" value="<?php echo htmlspecialchars($scope)?>" />
-        <input type="hidden" name="client_id" value="<?php echo htmlspecialchars($client_id)?>" />
+        <input type="hidden" name="_csrf" value="<?php echo $csrf_code; ?>" />
         <div class="form-line"><label for="password">Password:</label> <input type="password" name="password" id="password" /></div>
         <div class="form-line"><input class="submit" type="submit" name="submit" value="Submit" /></div>
     </form>
 
-    </body></html>
-<?php 
-    exit();
-} //end elseif
-
-$csrf_code      = (isset($_POST['_csrf']        ) ? $_POST['_csrf']           : null );  
-$pass_input     = (isset($_POST['password']     ) ? $_POST['password']        : null );  
-$me             = (isset($_POST['me']           ) ? $_POST['me']              : null );  
-$redirect_uri   = (isset($_POST['redirect_uri'] ) ? $_POST['redirect_uri']    : null );
-$response_type  = (isset($_POST['response_type']) ? $_POST['response_type']   : 'id' );
-$state          = (isset($_POST['state']        ) ? $_POST['state']           : ''   );
-$client_id      = (isset($_POST['client_id']    ) ? $_POST['client_id']       : null );
-$scope          = (isset($_POST['scope']        ) ? $_POST['scope']           : '' );
-
-//TODO check scope and response_type make sense once they are supported
-
-if(!verify_signed_code(APP_KEY, $client_id . $redirect_uri . $state, $csrf_code)){
-    error_page('Invalid csrf code','Usually this means you took too long to log in. Please try again.');
-}
-if(empty($me)){
-    error_page('Incomplete Request', 'There was an error with the request.  No "me" field given.');
-}
-if(empty($client_id)){
-    error_page('Incomplete Request', 'There was an error with the request.  No "client_id" field given.');
-}
-if(empty($redirect_uri)){
-    error_page('Incomplete Request', 'There was an error with the request.  No "redirect_uri" field given.');
-}
-if(empty($state)){
-    error_page('Incomplete Request', 'There was an error with the request.  No "state" field given.');
-}
-if(empty($pass_input)){
-    error_page('Incomplete Request', 'No Password Given.');
-}
-
-// verify login
-if(verify_password($me, $pass_input)) {
-    $scope_encoded = preg_replace('/ +/', ',', trim($scope));
-
-    $code = create_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, 5 * 60, $scope_encoded);
-
-    $final_redir = $redirect_uri;
-    if(strpos($redirect_uri, '?') === FALSE){
-        $final_redir .= '?';
-    } else {
-        $final_redir .= '&';
-    }
-    $final_redir .= http_build_query(array(
-        'code' => $code,
-        'state' => $state,
-        'me' => $me
-    ));
-
-    // redirect back
-    header('Location: ' . $final_redir);
-    exit();
-} else {
-    error_page('Login Failed', 'Invalid username or password.');
-}
-
-
+    </body>
+</html>
