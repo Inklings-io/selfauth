@@ -88,6 +88,33 @@ function filter_input_regexp($type, $variable, $regexp)
     );
 }
 
+function get_q_value($mime, $accept)
+{
+    $fulltype = preg_replace('@^([^/]+\/).+$@', '$1*', $mime);
+    $regex = implode(
+        '',
+        array(
+            '/(?<=^|,)\s*(\*\/\*|',
+            preg_quote($fulltype, '/'),
+            '|',
+            preg_quote($mime, '/'),
+            ')\s*(?:[^,]*?;\s*q\s*=\s*([0-9.]+))?\s*(?:,|$)/'
+        )
+    );
+    $out = preg_match_all($regex, $accept, $matches);
+    $types = array_combine($matches[1], $matches[2]);
+    if (array_key_exists($mime, $types)) {
+        $q = $types[$mime];
+    } elseif (array_key_exists($fulltype, $types)) {
+        $q = $types[$fulltype];
+    } elseif (array_key_exists('*/*', $types)) {
+        $q = $types['*/*'];
+    } else {
+        return 0;
+    }
+    return $q === '' ? 1 : floatval($q);
+}
+
 if ((!defined('APP_URL') || APP_URL == '')
     || (!defined('APP_KEY') || APP_KEY == '')
     || (!defined('USER_HASH') || USER_HASH == '')
@@ -115,34 +142,11 @@ if ($code !== null) {
         error_page('Verification Failed', 'Given Code Was Invalid');
     }
 
-    // A regular expression for extracting */*, application/*, application/json, and application/x-www-form-urlencoded, as well as their respective q values.
-    $regex = '/(?<=^|,)\s*(\*\/\*|application\/\*|application\/x-www-form-urlencoded|application\/json)\s*(?:[^,]*?;\s*q\s*=\s*([0-9.]+))?\s*(?:,|$)/';
-    $out = preg_match_all($regex, $_SERVER['HTTP_ACCEPT'], $matches);
-    $types = array_combine($matches[1], $matches[2]);
-
     // Find the q value for application/json.
-    if (array_key_exists('application/json', $types)) {
-        $json = $types['application/json'] === '' ? 1 : $types['application/json'];
-    } elseif (array_key_exists('application/*', $types)) {
-        $json = $types['application/*'] === '' ? 1 : $types['application/*'];
-    } elseif (array_key_exists('*/*', $types)) {
-        $json = $types['*/*'] === '' ? 1 : $types['*/*'];
-    } else {
-        $json = 0;
-    }
-    $json = floatval($json);
+    $json = get_q_value('application/json', $_SERVER['HTTP_ACCEPT']);
 
     // Find the q value for application/x-www-form-urlencoded.
-    if (array_key_exists('application/x-www-form-urlencoded', $types)) {
-        $form = $types['application/x-www-form-urlencoded'] === '' ? 1 : $types['application/x-www-form-urlencoded'];
-    } elseif (array_key_exists('application/*', $types)) {
-        $form = $types['application/*'] === '' ? 1 : $types['application/*'];
-    } elseif (array_key_exists('*/*', $types)) {
-        $form = $types['*/*'] === '' ? 1 : $types['*/*'];
-    } else {
-        $form = 0;
-    }
-    $form = floatval($form);
+    $form = get_q_value('application/x-www-form-urlencoded', $_SERVER['HTTP_ACCEPT']);
 
     // Respond in the correct way.
     if ($json === 0 && $form === 0) {
