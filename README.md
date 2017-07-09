@@ -25,6 +25,13 @@ To set up Selfauth, create a folder on your webserver and add the files in this 
     ... where `https://example.com/auth/` is the URL you installed Selfauth to.
     (The exact location of your HTML `<head>` could be hidden in your CMS. Look for help in their documentation. Setting a HTTP Link header like `Link: <https://example.com/auth/>; rel="authorization_endpoint"` should work too.)
 
+You can delete the file `setup.php` if you want, but this is optional. It will not be able to save a new password for you once the setup is completed.
+
+
+## Changing your password
+
+To change your password, make sure the `setup.php` file is in place again and delete `config.php`. Then follow the steps under [Setup](#setup) again.
+
 
 ## How it works
 
