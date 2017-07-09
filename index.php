@@ -209,13 +209,13 @@ if ($scope === false) { // scope contains invalid characters.
         'There was an error with the request. The "scope" field contains invalid data.'
     );
 }
-if ($response_type !== 'code' & $scope !== null) { // scope defined on identification request.
+if ($response_type !== 'code' && $scope !== null) { // scope defined on identification request.
     error_page(
         'Faulty Request',
         'There was an error with the request. The "scope" field cannot be used with identification.'
     );
 }
-if ($response_type === 'code' & $scope === null) { // scope omitted on code request.
+if ($response_type === 'code' && $scope === null) { // scope omitted on code request.
     error_page(
         'Faulty Request',
         'There was an error with the request. The "scope" field must be used with code requests.'
