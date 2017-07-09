@@ -1,18 +1,22 @@
 # Selfauth
-self-hosted auth_endpoint using simple login mechanism
 
-# Warning: while Selfauth will work with old versions of PHP, the ability to get sufficiently random strings was not added until version 5.6.  While older versions are not completely insecure, it is strongly recommended you upgrade to a newer version of PHP.
+Selfauth is a self-hosted [Authorization Endpoint](https://indieweb.org/authorization-endpoint) used to login with a personal URL (as [Web sign-in](http://indieweb.org/Web_sign-in)) via [IndieAuth](https://indieweb.org/IndieAuth). See [How it works](#how-it-works) for more.
 
-# Warning: currently selfauth only supports authentication, not authorization.  Meaning scopes will not work yet.  If you need access to these features, it is advisable to use something else for now.
 
-Setup
------
+## Warnings
+
+- While Selfauth will work with old versions of PHP, the ability to get sufficiently random strings was not added until version 5.6. While older versions are not completely insecure, **it is strongly recommended you upgrade to a newer version of PHP**.
+
+- Currently selfauth only supports authentication, not authorization.  Meaning **scopes will not work yet**. If you need access to these features, it is advisable to use something else for now.
+
+
+## Setup
 
 To set up Selfauth, create a folder on your webserver and add the files in this repository to it. You can name the folder anything you like, but in this example we will work with 'auth' under `https://example.com/auth/`.
 
 1. Create a folder called 'auth' on your webserver and add at least `index.php` and `setup.php`.
 
-2. Go to `https://example.com/auth/setup.php` and fill in the form: pick the URL you're trying to log in for (in our case `https://example.com`) and choose a password.
+2. Go to `https://example.com/auth/setup.php` and fill in the form: pick the personal URL you're trying to log in for (in our case `https://example.com`) and choose a password.
 
 3. Find the index-page of your domain and add the following code inside the `<head>` tag:
     ```html
@@ -21,13 +25,15 @@ To set up Selfauth, create a folder on your webserver and add the files in this 
     ... where `https://example.com/auth/` is the URL you installed Selfauth to.
     (The exact location of your HTML `<head>` could be hidden in your CMS. Look for help in their documentation. Setting a HTTP Link header like `Link: <https://example.com/auth/>; rel="authorization_endpoint"` should work too.)
 
-4. Go to a place to login with IndieAuth and enter your URL. (IndieAuth.com has a test-form on the frontpage. Enter your URL and it will discover your new endpoint. Click on that button. Other IndieAuth clients will redirect you to your Selfauth immediately.)
 
-5. Fill in your password and click login!
+## How it works
+
+On a (Web)App which supports [IndieAuth](https://indieweb.org/IndieAuth), you can enter your personal URL. The App will detect Selfauth as Authorization Endpoint and redirect you to it. After you enter your password in Selfauth, you are redirected back to the App with a code. The App will verify the code with Selfauth and logs you in as your personal URL.
+
+To test it, you can go to an App that supports IndieAuth and enter your personal URL. [IndieAuth.com](https://indieauth.com/) has a test-form on the frontpage. If you also link to your social media accounts using `rel="me"`, IndieAuth.com might show you a list of buttons, on which you can click the one that has your Selfauth URL on it.
 
 
-License
--------
+## License
 
 Copyright 2017 by Ben Roberts and contributors
 
