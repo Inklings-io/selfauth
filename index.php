@@ -144,7 +144,7 @@ if ($code !== null) {
 
     $response = array('me' => USER_URL);
 
-    if ($scope = array_pop(explode(':', $code, 3))) {
+    if ($scope = (explode(':', $code, 3))[2]) {
         $response['scope'] = $scope;
     }
 
