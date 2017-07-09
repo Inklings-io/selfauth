@@ -250,13 +250,14 @@ if ($pass_input !== null) {
     } else {
         $final_redir .= '&';
     }
-    $final_redir .= http_build_query(
-        array(
-            'code' => $code,
-            'state' => $state,
-            'me' => $me
-        )
+    $parameters = array(
+        'code' => $code,
+        'me' => $me
     );
+    if ($state !== null) {
+        $parameters['state'] = $state;
+    }
+    $final_redir .= http_build_query($parameters);
 
     // Redirect back.
     header('Location: ' . $final_redir, true, 302);
