@@ -171,7 +171,7 @@ $client_id = filter_input(INPUT_GET, 'client_id', FILTER_VALIDATE_URL);
 $redirect_uri = filter_input(INPUT_GET, 'redirect_uri', FILTER_VALIDATE_URL);
 $state = filter_input_regexp(INPUT_GET, 'state', '@^[\x20-\x7E]*$@');
 $response_type = filter_input_regexp(INPUT_GET, 'response_type', '@^(id|code)$@');
-$scope = filter_input_regexp(INPUT_GET, 'scope', '@^[\x21\x23-\x5B\x5D-\x7E]*$@');
+$scope = filter_input_regexp(INPUT_GET, 'scope', '@^[\x21\x23-\x5B\x5D-\x7E]+$@');
 
 if (!is_string($me)) { // me is either omitted or not a valid URL.
     error_page(
@@ -207,6 +207,18 @@ if ($scope === false) { // scope contains invalid characters.
     error_page(
         'Faulty Request',
         'There was an error with the request. The "scope" field contains invalid data.'
+    );
+}
+if ($response_type !== 'code' & $scope !== null) { // scope defined on identification request.
+    error_page(
+        'Faulty Request',
+        'There was an error with the request. The "scope" field cannot be used with identification.'
+    );
+}
+if ($response_type === 'code' & $scope === null) { // scope omitted on code request.
+    error_page(
+        'Faulty Request',
+        'There was an error with the request. The "scope" field must be used with code requests.'
     );
 }
 
