@@ -5,7 +5,7 @@ Selfauth is a self-hosted [Authorization Endpoint](https://indieweb.org/authoriz
 
 ## Warnings
 
-- While Selfauth will work with old versions of PHP, the ability to get sufficiently random strings was not added until version 5.6. While older versions are not completely insecure, **it is strongly recommended you upgrade to a newer version of PHP**.
+- While Selfauth will work with old versions of PHP, some of the more secure functions Selfauth uses were not added until version 5.6. While older versions are not completely insecure, **it is strongly recommended you upgrade to a newer version of PHP**.
 
 - Currently selfauth only supports authentication, not authorization.  Meaning **scopes will not work yet**. If you need access to these features, it is advisable to use something else for now.
 
