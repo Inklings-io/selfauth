@@ -301,9 +301,9 @@ padding:20px;
     </head>
     <body>
         <h1>Authenticate</h1>
-        <div>You are attempting to login with client <pre><?php echo $client_id; ?></pre></div>
+        <div>You are attempting to login with client <pre><?php echo htmlspecialchars($client_id); ?></pre></div>
         <div>It is requesting the following scopes <pre><?php echo htmlspecialchars($scope); ?></pre></div>
-        <div>After login you will be redirected to  <pre><?php echo $redirect_uri; ?></pre></div>
+        <div>After login you will be redirected to  <pre><?php echo htmlspecialchars($redirect_uri); ?></pre></div>
         <form method="POST" action="">
             <input type="hidden" name="_csrf" value="<?php echo $csrf_code; ?>" />
             <div class="form-line">
