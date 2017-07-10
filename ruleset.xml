@@ -25,6 +25,7 @@
   </rule>
 
   <rule ref="Squiz.PHP.DisallowMultipleAssignments"/>
+  <rule ref="Squiz.PHP.EmbeddedPhp"/>
 
  <!-- 2.2 Files -->
 
