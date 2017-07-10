@@ -24,22 +24,24 @@ padding:20px;
 <body>
 <h1>Setup Selfauth</h1>
 <div class="instructions">In order to configure Selfauth, you need to fill in a few values, this page helps generate those options.</div>
-<?php if(isset($_POST['username'])):?>
+<?php if (isset($_POST['username'])) : ?>
 <div>
-<?php define('RANDOM_BYTE_COUNT', 32);
+<?php
+define('RANDOM_BYTE_COUNT', 32);
 
-    $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'] 
+    $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST']
       . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
 
-    if(function_exists('random_bytes')) {
-        $bytes = random_bytes(RANDOM_BYTE_COUNT);
-    } elseif(function_exists('openssl_random_pseudo_bytes')){
-        $bytes = openssl_random_pseudo_bytes(RANDOM_BYTE_COUNT);
-    } else {
-        for ($i=0, $bytes=''; $i < RANDOM_BYTE_COUNT; $i++) {
-            $bytes .= chr(mt_rand(0, 255));
-        }
+if (function_exists('random_bytes')) {
+    $bytes = random_bytes(RANDOM_BYTE_COUNT);
+} elseif (function_exists('openssl_random_pseudo_bytes')) {
+    $bytes = openssl_random_pseudo_bytes(RANDOM_BYTE_COUNT);
+} else {
+    $bytes = '';
+    for ($i=0; $i < RANDOM_BYTE_COUNT; $i++) {
+        $bytes .= chr(mt_rand(0, 255));
     }
+}
     $app_key = bin2hex($bytes);
 
 
@@ -60,48 +62,45 @@ define('USER_URL', '$user');";
 
     $configured = true;
 
-    if(file_exists($configfile)){
+if (file_exists($configfile)) {
+    require_once $configfile;
 
-        require_once $configfile;
-        
-        if((!defined('APP_URL') || APP_URL == '')
-            || (!defined('APP_KEY') || APP_KEY == '')
-            || (!defined('USER_HASH') || USER_HASH == '')
-            || (!defined('USER_URL') || USER_URL == '')
-        ) {
-            $configured = false;
-        }
-    } else {
+    if ((!defined('APP_URL') || APP_URL == '')
+    || (!defined('APP_KEY') || APP_KEY == '')
+    || (!defined('USER_HASH') || USER_HASH == '')
+    || (!defined('USER_URL') || USER_URL == '')
+    ) {
         $configured = false;
     }
+} else {
+    $configured = false;
+}
 
-	$file_written = false;
+    $file_written = false;
 
-    if(is_writeable($configfile) && !$configured){
+if (is_writeable($configfile) && !$configured) {
+    $handle = fopen($configfile, 'w');
 
-		$handle = fopen($configfile, 'w');
-
-		if($handle){
-			$result = fwrite($handle, $config_file_contents);
-			if($result !== FALSE){
-				$file_written = true;
-			}
-			
-		}
-
-		fclose($handle);
+    if ($handle) {
+        $result = fwrite($handle, $config_file_contents);
+        if ($result !== false) {
+            $file_written = true;
+        }
     }
 
+    fclose($handle);
+}
 
-    if($file_written){
-		echo '<div class="message">config.php was successfully written to disk</div>';
-	} else {
-        echo '<div class="message">Fill in the file config.php with the following content</div>';
-        echo '<pre>';
-        echo htmlentities($config_file_contents);
-        echo '</pre>';
-    }
- ?>
+
+if ($file_written) {
+    echo '<div class="message">config.php was successfully written to disk</div>';
+} else {
+    echo '<div class="message">Fill in the file config.php with the following content</div>';
+    echo '<pre>';
+    echo htmlentities($config_file_contents);
+    echo '</pre>';
+}
+    ?>
 </div>
 <?php endif ?>
 <form method="POST" action="">
