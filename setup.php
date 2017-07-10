@@ -5,6 +5,7 @@ Setup Selfauth
 </title>
 <style>
 h1{text-align:center;margin-top:5%;}
+h2{text-align:center;}
 .instructions{text-align:center;}
 .message{margin-top:20px;text-align:center;font-size:1.2em;font-weight:bold;}
 pre {width:400px; margin-left:auto; margin-right:auto;margin-bottom:50px;}
@@ -74,17 +75,28 @@ if (file_exists($configfile)) {
 } else {
     $configured = false;
 }
-?>
 
-<?php if ($configured) : ?>
+if ($configured) : ?>
     <h2>System already configured</h2>
-<?php else : ?>
+    <div class="instructions">
+        If you with to reconfigure, please remove config.php and reload this page.
+    </div>
 
-    <!-- TODO: should this reveal exactly how to reconfigure? i don't think its really a security issue, -->
-    <!-- just reveals a little more obviously that its selfauth running the auth endpoint -->
+<?php
+else :
+    define('RANDOM_BYTE_COUNT', 32);
 
-    <?php if (!function_exists('random_bytes') && !function_exists('openssl_random_pseudo_bytes')) : ?>
-       <h2>
+    $strong_crypto = true;
+
+    if (!function_exists('random_bytes') || !function_exists('openssl_random_pseudo_bytes') || !function_exists('hash_equals')) {
+        $strong_crypto = false;
+    } else {
+        $bytes = openssl_random_pseudo_bytes(RANDOM_BYTE_COUNT, $strong_crypto);
+    }
+
+?>
+    <?php if ($strong_crypto) : ?>
+        <h2>
            WARNING: this version of PHP does not support functions 'random_bytes' or 'openssl_random_pseudo_bytes'. 
            This means your application is not as secure as it could be.  You may continues, but it is strongly recommended you upgrade PHP.
         </h2> 
@@ -94,10 +106,7 @@ if (file_exists($configfile)) {
     <?php if (isset($_POST['username'])) : ?>
     <div>
     <?php
-    define('RANDOM_BYTE_COUNT', 32);
-
-        $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST']
-          . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
+    $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'] . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
 
     if (function_exists('random_bytes')) {
         $bytes = random_bytes(RANDOM_BYTE_COUNT);
@@ -109,21 +118,22 @@ if (file_exists($configfile)) {
             $bytes .= chr(mt_rand(0, 255));
         }
     }
-        $app_key = bin2hex($bytes);
+
+    $app_key = bin2hex($bytes);
 
 
-        $user = $_POST['username'];
+    $user = $_POST['username'];
 
-        $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
-        $pass = md5($user_tmp . $_POST['password'] . $app_key);
+    $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
+    $pass = md5($user_tmp . $_POST['password'] . $app_key);
 
-        $config_file_contents = "<?php
+    $config_file_contents = "<?php
 define('APP_URL', '$app_url');
 define('APP_KEY', '$app_key');
 define('USER_HASH', '$pass');
 define('USER_URL', '$user');";
 
-        $file_written = false;
+    $file_written = false;
 
     if (is_writeable($configfile) && !$configured) {
         $handle = fopen($configfile, 'w');
@@ -147,7 +157,7 @@ define('USER_URL', '$user');";
         echo htmlentities($config_file_contents);
         echo '</pre>';
     }
-        ?>
+?>
     </div>
     <?php endif ?>
     <form method="POST" action="">
