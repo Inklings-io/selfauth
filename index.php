@@ -144,8 +144,10 @@ if ($code !== null) {
 
     $response = array('me' => USER_URL);
 
-    if ($scope = (explode(':', $code, 3))[2]) {
-        $response['scope'] = $scope;
+    $code_parts = explode(':', $code, 3);
+
+    if (!empty($code_parts[2])) {
+        $response['scope'] = $code_parts[2];
     }
 
     // Find the q value for application/json.
