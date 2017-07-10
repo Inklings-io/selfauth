@@ -23,39 +23,7 @@ padding:20px;
 </head>
 <body>
 <h1>Setup Selfauth</h1>
-<div class="instructions">In order to configure Selfauth, you need to fill in a few values, this page helps generate those options.</div>
-<?php if(isset($_POST['username'])):?>
-<div>
-<?php define('RANDOM_BYTE_COUNT', 32);
-
-    $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'] 
-      . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
-
-    if(function_exists('random_bytes')) {
-        $bytes = random_bytes(RANDOM_BYTE_COUNT);
-    } elseif(function_exists('openssl_random_pseudo_bytes')){
-        $bytes = openssl_random_pseudo_bytes(RANDOM_BYTE_COUNT);
-    } else {
-        for ($i=0, $bytes=''; $i < RANDOM_BYTE_COUNT; $i++) {
-            $bytes .= chr(mt_rand(0, 255));
-        }
-    }
-    $app_key = bin2hex($bytes);
-
-
-    $user = $_POST['username'];
-
-    $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
-    $pass = md5($user_tmp . $_POST['password'] . $app_key);
-
-    $config_file_contents = "<?php
-define('APP_URL', '$app_url');
-define('APP_KEY', '$app_key');
-define('USER_HASH', '$pass');
-define('USER_URL', '$user');";
-
-
-
+<?php 
     $configfile= __DIR__ . '/config.php';
 
     $configured = true;
@@ -75,39 +43,81 @@ define('USER_URL', '$user');";
         $configured = false;
     }
 
-	$file_written = false;
+?>
 
-    if(is_writeable($configfile) && !$configured){
+<?php if($configured): //TODO, should this reveal exactly how to reconfigure? I don't this it would be a security issue ?>
+    <h2>System already configured</h2>
+<?php else: ?>
 
-		$handle = fopen($configfile, 'w');
+    <?php if(!function_exists('random_bytes') && !function_exists('openssl_random_pseudo_bytes')): ?>
+       <h2>WARNING: this version of PHP does not support functions 'random_bytes' or 'openssl_random_pseudo_bytes'.  This means your application is not as secure as it could be.  You may continues, but it is strongly recommended you upgrade PHP.</h2> 
+    <?php endif; ?>
 
-		if($handle){
-			$result = fwrite($handle, $config_file_contents);
-			if($result !== FALSE){
-				$file_written = true;
-			}
-			
-		}
+    <div class="instructions">In order to configure Selfauth, you need to fill in a few values, this page helps generate those options.</div>
+    <?php if(isset($_POST['username'])):?>
+    <div>
+    <?php define('RANDOM_BYTE_COUNT', 32);
 
-		fclose($handle);
-    }
+        $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'] 
+          . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
+
+        if(function_exists('random_bytes')) {
+            $bytes = random_bytes(RANDOM_BYTE_COUNT);
+        } elseif(function_exists('openssl_random_pseudo_bytes')){
+            $bytes = openssl_random_pseudo_bytes(RANDOM_BYTE_COUNT);
+        } else {
+            for ($i=0, $bytes=''; $i < RANDOM_BYTE_COUNT; $i++) {
+                $bytes .= chr(mt_rand(0, 255));
+            }
+        }
+        $app_key = bin2hex($bytes);
 
 
-    if($file_written){
-		echo '<div class="message">config.php was successfully written to disk</div>';
-	} else {
-        echo '<div class="message">Fill in the file config.php with the following content</div>';
-        echo '<pre>';
-        echo htmlentities($config_file_contents);
-        echo '</pre>';
-    }
- ?>
-</div>
-<?php endif ?>
-<form method="POST" action="">
-<div class="form-line"><label>Login Url:</label> <input name='username' /></div>
-<div class="form-line"><label>Password:</label> <input type='password' name='password' /></div>
-<div class="form-line"><input class="submit" type="submit" name="submit" value="Generate Config"/></div>
-</form>
+        $user = $_POST['username'];
+
+        $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
+        $pass = md5($user_tmp . $_POST['password'] . $app_key);
+
+        $config_file_contents = "<?php
+define('APP_URL', '$app_url');
+define('APP_KEY', '$app_key');
+define('USER_HASH', '$pass');
+define('USER_URL', '$user');";
+
+        $file_written = false;
+
+        if(is_writeable($configfile) && !$configured){
+
+            $handle = fopen($configfile, 'w');
+
+            if($handle){
+                $result = fwrite($handle, $config_file_contents);
+                if($result !== FALSE){
+                    $file_written = true;
+                }
+                
+            }
+
+            fclose($handle);
+        }
+
+
+        if($file_written){
+            echo '<div class="message">config.php was successfully written to disk</div>';
+        } else {
+            echo '<div class="message">Fill in the file config.php with the following content</div>';
+            echo '<pre>';
+            echo htmlentities($config_file_contents);
+            echo '</pre>';
+        }
+     ?>
+    </div>
+    <?php endif ?>
+    <form method="POST" action="">
+    <div class="form-line"><label>Login Url:</label> <input name='username' /></div>
+    <div class="form-line"><label>Password:</label> <input type='password' name='password' /></div>
+    <div class="form-line"><input class="submit" type="submit" name="submit" value="Generate Config"/></div>
+    </form>
+<?php endif; // end if not configured ?>
 </body>
 </html>
