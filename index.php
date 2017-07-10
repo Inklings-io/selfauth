@@ -76,9 +76,9 @@ if ((!defined('APP_URL') || APP_URL == '')
 }
 
 if (!empty($_POST) && isset($_POST['code'])) {
-    $redirect_uri   = (isset($_POST['redirect_uri']) ? $_POST['redirect_uri']    : null );
-    $client_id      = (isset($_POST['client_id']) ? $_POST['client_id']       : null );
-    $code           = (isset($_POST['code']) ? $_POST['code']            : null );
+    $redirect_uri = (isset($_POST['redirect_uri']) ? $_POST['redirect_uri'] : null );
+    $client_id    = (isset($_POST['client_id']) ? $_POST['client_id']       : null );
+    $code         = (isset($_POST['code']) ? $_POST['code']                 : null );
 
     if (verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code)) {
         // A regular expression for extracting */*, application/*, application/json, and application/x-www-form-urlencoded, as well as their respective q values.
@@ -126,12 +126,12 @@ if (!empty($_POST) && isset($_POST['code'])) {
         error_page('Verification Failed', 'Given Code Was Invalid');
     }
 } elseif (empty($_POST)) {
-    $me             = (isset($_GET['me']) ? $_GET['me']                          : null );
-    $redirect_uri   = (isset($_GET['redirect_uri']) ? $_GET['redirect_uri']                : null );
-    $response_type  = (isset($_GET['response_type']) ? strtolower($_GET['response_type'])   : 'id' );
-    $state          = (isset($_GET['state']) ? $_GET['state']                       : null );
-    $client_id      = (isset($_GET['client_id']) ? $_GET['client_id']                   : null );
-    $scope          = (isset($_GET['scope']) ? $_GET['scope']                       : ''   );
+    $me            = (isset($_GET['me']) ? $_GET['me']                                   : null );
+    $redirect_uri  = (isset($_GET['redirect_uri']) ? $_GET['redirect_uri']               : null );
+    $response_type = (isset($_GET['response_type']) ? strtolower($_GET['response_type']) : 'id' );
+    $state         = (isset($_GET['state']) ? $_GET['state']                             : null );
+    $client_id     = (isset($_GET['client_id']) ? $_GET['client_id']                     : null );
+    $scope         = (isset($_GET['scope']) ? $_GET['scope']                             : ''   );
     //TODO how would we support scope?
 
     //TODO check scope and response_type make sense once they are supported
