@@ -29,8 +29,8 @@ padding:20px;
 <?php
 define('RANDOM_BYTE_COUNT', 32);
 
-    $app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST']
-      . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
+$app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST']
+  . str_replace('setup.php', '', $_SERVER['REQUEST_URI']);
 
 if (function_exists('random_bytes')) {
     $bytes = random_bytes(RANDOM_BYTE_COUNT);
@@ -42,15 +42,15 @@ if (function_exists('random_bytes')) {
         $bytes .= chr(mt_rand(0, 255));
     }
 }
-    $app_key = bin2hex($bytes);
+$app_key = bin2hex($bytes);
 
 
-    $user = $_POST['username'];
+$user = $_POST['username'];
 
-    $user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
-    $pass = md5($user_tmp . $_POST['password'] . $app_key);
+$user_tmp = trim(preg_replace('/^https?:\/\//', '', $_POST['username']), '/');
+$pass = md5($user_tmp . $_POST['password'] . $app_key);
 
-    $config_file_contents = "<?php
+$config_file_contents = "<?php
 define('APP_URL', '$app_url');
 define('APP_KEY', '$app_key');
 define('USER_HASH', '$pass');
@@ -58,9 +58,9 @@ define('USER_URL', '$user');";
 
 
 
-    $configfile= __DIR__ . '/config.php';
+$configfile= __DIR__ . '/config.php';
 
-    $configured = true;
+$configured = true;
 
 if (file_exists($configfile)) {
     require_once $configfile;
@@ -76,7 +76,7 @@ if (file_exists($configfile)) {
     $configured = false;
 }
 
-    $file_written = false;
+$file_written = false;
 
 if (is_writeable($configfile) && !$configured) {
     $handle = fopen($configfile, 'w');
