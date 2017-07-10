@@ -146,7 +146,7 @@ if ($code !== null) {
 
     $code_parts = explode(':', $code, 3);
 
-    if (!empty($code_parts[2])) {
+    if ($code_parts[2] !== '') {
         $response['scope'] = $code_parts[2];
     }
 
