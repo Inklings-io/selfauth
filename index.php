@@ -142,6 +142,14 @@ if ($code !== null) {
         error_page('Verification Failed', 'Given Code Was Invalid');
     }
 
+    $response = array('me' => USER_URL);
+
+    $code_parts = explode(':', $code, 3);
+
+    if ($code_parts[2] !== '') {
+        $response['scope'] = $code_parts[2];
+    }
+
     // Find the q value for application/json.
     $json = get_q_value('application/json', $_SERVER['HTTP_ACCEPT']);
 
@@ -157,10 +165,10 @@ if ($code !== null) {
         );
     } elseif ($json >= $form) {
         header('Content-Type: application/json');
-        exit(json_encode(array('me' => USER_URL)));
+        exit(json_encode($response));
     } else {
         header('Content-Type: application/x-www-form-urlencoded');
-        exit(http_build_query(array('me' => USER_URL)));
+        exit(http_build_query($response));
     }
 }
 
