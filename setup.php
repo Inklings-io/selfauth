@@ -37,7 +37,7 @@ if (function_exists('random_bytes')) {
 } elseif (function_exists('openssl_random_pseudo_bytes')) {
     $bytes = openssl_random_pseudo_bytes(RANDOM_BYTE_COUNT);
 } else {
-    $bytes='';
+    $bytes = '';
     for ($i=0; $i < RANDOM_BYTE_COUNT; $i++) {
         $bytes .= chr(mt_rand(0, 255));
     }
