@@ -37,6 +37,22 @@ if (file_exists($configfile)) {
     );
 }
 
+// Enable string comparison in constant time.
+if (!function_exists('hash_equals')) {
+    function hash_equals($known_string, $user_string)
+    {
+        $known_length = strlen($known_string);
+        if ($known_length !== strlen($user_string)) {
+            return false;
+        }
+        $match = 0;
+        for ($i = 0; $i < $known_length; $i++) {
+            $match |= (ord($known_string[$i]) ^ ord($user_string[$i]));
+        }
+        return $match === 0;
+    }
+}
+
 // Signed codes always have an time-to-live, by default 1 year (31536000 seconds).
 function create_signed_code($key, $message, $ttl = 31536000, $appended_data = '')
 {
@@ -58,11 +74,7 @@ function verify_signed_code($key, $message, $code)
     }
     $body = $message . $expires . $code_parts[2];
     $signature = hash_hmac('sha256', $body, $key);
-    if (function_exists('hash_equals')) {
-        return hash_equals($signature, $code_parts[1]);
-    } else {
-        return $signature === $code_parts[1];
-    }
+    return hash_equals($signature, $code_parts[1]);
 }
 
 function verify_password($url, $pass)
@@ -73,7 +85,7 @@ function verify_password($url, $pass)
 
     $configured_user = trim(preg_replace('/^https?:\/\//', '', USER_URL), '/');
 
-    return ($input_user == $configured_user && $hash == USER_HASH);
+    return ($input_user == $configured_user && hash_equals(USER_HASH, $hash));
 }
 
 function filter_input_regexp($type, $variable, $regexp)
