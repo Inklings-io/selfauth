@@ -276,13 +276,14 @@ if ($pass_input !== null) {
 
     $scope = filter_input_regexp(INPUT_POST, 'scopes', '@^[\x21\x23-\x5B\x5D-\x7E]+$@', FILTER_REQUIRE_ARRAY);
 
-    // Exit if the scopes ended up with illegal characters.
-    if ($scope === false) {
-        error_page('Invalid Scopes', 'The scopes provided contained illegal characters.');
-    }
-
-    // Turn scopes into a single string again.
+    // Scopes are defined.
     if ($scope !== null) {
+        // Exit if the scopes ended up with illegal characters or were not supplied as array.
+        if ($scope === false || in_array(false, $scope, true)) {
+            error_page('Invalid Scopes', 'The scopes provided contained illegal characters.');
+        }
+
+        // Turn scopes into a single string again.
         $scope = implode(' ', $scope);
     }
 
