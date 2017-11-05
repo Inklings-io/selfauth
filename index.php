@@ -88,15 +88,19 @@ function verify_password($url, $pass)
     return ($input_user == $configured_user && hash_equals(USER_HASH, $hash));
 }
 
-function filter_input_regexp($type, $variable, $regexp)
+function filter_input_regexp($type, $variable, $regexp, $flags = null)
 {
+    $options = array(
+        'options' => array('regexp' => $regexp)
+    );
+    if ($flags !== null) {
+        $options['flags'] = $flags;
+    }
     return filter_input(
         $type,
         $variable,
         FILTER_VALIDATE_REGEXP,
-        array(
-            'options' => array('regexp' => $regexp)
-        )
+        $options
     );
 }
 
@@ -270,6 +274,19 @@ if ($pass_input !== null) {
         error_page('Login Failed', 'Invalid username or password.');
     }
 
+    $scope = filter_input_regexp(INPUT_POST, 'scopes', '@^[\x21\x23-\x5B\x5D-\x7E]+$@', FILTER_REQUIRE_ARRAY);
+
+    // Scopes are defined.
+    if ($scope !== null) {
+        // Exit if the scopes ended up with illegal characters or were not supplied as array.
+        if ($scope === false || in_array(false, $scope, true)) {
+            error_page('Invalid Scopes', 'The scopes provided contained illegal characters.');
+        }
+
+        // Turn scopes into a single string again.
+        $scope = implode(' ', $scope);
+    }
+
     $code = create_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, 5 * 60, $scope);
 
     $final_redir = $redirect_uri;
@@ -303,9 +320,10 @@ $csrf_code = create_signed_code(APP_KEY, $client_id . $redirect_uri . $state, 2 
         <style>
 h1{text-align:center;margin-top:3%;}
 body {text-align:center;}
-pre {width:400px; margin-left:auto; margin-right:auto;margin-bottom:50px; background-color:#FFC; min-height:1em;}
+fieldset, pre {width:400px; margin-left:auto; margin-right:auto;margin-bottom:50px; background-color:#FFC; min-height:1em;}
+fieldset {text-align:left;}
 
-form{ 
+.form-login{ 
 margin-left:auto;
 width:300px;
 margin-right:auto;
@@ -320,18 +338,31 @@ padding:20px;
         </style>
     </head>
     <body>
-        <h1>Authenticate</h1>
-        <div>You are attempting to login with client <pre><?php echo htmlspecialchars($client_id); ?></pre></div>
-        <div>It is requesting the following scopes <pre><?php echo htmlspecialchars($scope); ?></pre></div>
-        <div>After login you will be redirected to  <pre><?php echo htmlspecialchars($redirect_uri); ?></pre></div>
         <form method="POST" action="">
-            <input type="hidden" name="_csrf" value="<?php echo $csrf_code; ?>" />
-            <div class="form-line">
-                <label for="password">Password:</label>
-                <input type="password" name="password" id="password" />
-            </div>
-            <div class="form-line">
-                <input class="submit" type="submit" name="submit" value="Submit" />
+            <h1>Authenticate</h1>
+            <div>You are attempting to login with client <pre><?php echo htmlspecialchars($client_id); ?></pre></div>
+            <?php if (strlen($scope) > 0) : ?>
+            <div>It is requesting the following scopes, uncheck any you do not wish to grant:</div>
+            <fieldset>
+                <legend>Scopes</legend>
+                <?php foreach (explode(' ', $scope) as $n => $checkbox) : ?>
+                <div>
+                    <input id="scope_<?php echo $n; ?>" type="checkbox" name="scopes[]" value="<?php echo htmlspecialchars($checkbox); ?>" checked>
+                    <label for="scope_<?php echo $n; ?>"><?php echo $checkbox; ?></label>
+                </div>
+                <?php endforeach; ?>
+            </fieldset>
+            <?php endif; ?>
+            <div>After login you will be redirected to  <pre><?php echo htmlspecialchars($redirect_uri); ?></pre></div>
+            <div class="form-login">
+                <input type="hidden" name="_csrf" value="<?php echo $csrf_code; ?>" />
+                <div class="form-line">
+                    <label for="password">Password:</label>
+                    <input type="password" name="password" id="password" />
+                </div>
+                <div class="form-line">
+                    <input class="submit" type="submit" name="submit" value="Submit" />
+                </div>
             </div>
         </form>
     </body>
