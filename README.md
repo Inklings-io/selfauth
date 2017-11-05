@@ -2,12 +2,12 @@
 
 Selfauth is a self-hosted [Authorization Endpoint](https://indieweb.org/authorization-endpoint) used to login with a personal URL (as [Web sign-in](http://indieweb.org/Web_sign-in)) via [IndieAuth](https://indieweb.org/IndieAuth). See [How it works](#how-it-works) for more.
 
+Selfauth is not a [Token Endpoint](https://indieweb.org/token-endpoint). To fully use Selfauth for authorization (and not just authentication) a separate token endpoint needs to be set-up, e.g. when using [Micropub](https://micropub.net/) clients. Examples of Token Endpoints are [listed on the wiki](https://indieweb.org/token_endpoint#IndieWeb_Examples).
+
 
 ## Warnings
 
 - While Selfauth will work with old versions of PHP, some of the more secure functions Selfauth uses were not added until version 5.6. While older versions are not completely insecure, **it is strongly recommended you upgrade to a newer version of PHP**.
-
-- Currently selfauth only supports authentication, not authorization.  Meaning **scopes will not work yet**. If you need access to these features, it is advisable to use something else for now.
 
 
 ## Setup
