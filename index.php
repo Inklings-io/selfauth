@@ -271,6 +271,18 @@ if ($pass_input !== null) {
 
     // Exit if the password does not verify.
     if (!verify_password($me, $pass_input)) {
+        // Optional logging for failed logins.
+        //
+        // Enabling this on shared hosting may not be a good idea if syslog
+        // isn't private and accessible. Enable with caution.
+        if (function_exists('syslog') && defined('SYSLOG_FAILURE') && SYSLOG_FAILURE === 'I understand') {
+            syslog(LOG_CRIT, sprintf(
+                'IndieAuth: login failure from %s for %s',
+                $_SERVER['REMOTE_ADDR'],
+                $me
+            ));
+        }
+
         error_page('Login Failed', 'Invalid username or password.');
     }
 
@@ -303,6 +315,18 @@ if ($pass_input !== null) {
         $parameters['state'] = $state;
     }
     $final_redir .= http_build_query($parameters);
+
+    // Optional logging for successful logins.
+    //
+    // Enabling this on shared hosting may not be a good idea if syslog
+    // isn't private and accessible. Enable with caution.
+    if (function_exists('syslog') && defined('SYSLOG_SUCCESS') && SYSLOG_SUCCESS === 'I understand') {
+        syslog(LOG_INFO, sprintf(
+            'IndieAuth: login from %s for %s',
+            $_SERVER['REMOTE_ADDR'],
+            $me
+        ));
+    }
 
     // Redirect back.
     header('Location: ' . $final_redir, true, 302);
