@@ -184,7 +184,7 @@ if ($code !== null) {
     $code_parts = explode(':', $code, 3);
 
     if ($code_parts[2] !== '') {
-        $response['scope'] = $code_parts[2];
+        $response['scope'] = base64_url_decode($code_parts[2]);
     }
 
     // Find the q value for application/json.
