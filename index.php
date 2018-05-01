@@ -144,7 +144,7 @@ function base64_url_encode($string)
 function base64_url_decode($string)
 {
     $string = strtr($string, '-_', '+/');
-    $padding = strlen($input) % 4;
+    $padding = strlen($string) % 4;
     if ($padding !== 0) {
         $string .= str_repeat('=', 4 - $padding);
     }
