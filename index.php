@@ -59,7 +59,7 @@ function create_signed_code($key, $message, $ttl = 31536000, $appended_data = ''
     $expires = time() + $ttl;
     $body = $message . $expires . $appended_data;
     $signature = hash_hmac('sha256', $body, $key);
-    return dechex($expires) . ':' . $signature . ':' . $appended_data;
+    return dechex($expires) . ':' . $signature . ':' . base64_url_encode($appended_data);
 }
 
 function verify_signed_code($key, $message, $code)
@@ -72,7 +72,7 @@ function verify_signed_code($key, $message, $code)
     if (time() > $expires) {
         return false;
     }
-    $body = $message . $expires . $code_parts[2];
+    $body = $message . $expires . base64_url_decode($code_parts[2]);
     $signature = hash_hmac('sha256', $body, $key);
     return hash_equals($signature, $code_parts[1]);
 }
@@ -129,6 +129,27 @@ function get_q_value($mime, $accept)
         return 0;
     }
     return $q === '' ? 1 : floatval($q);
+}
+
+// URL Safe Base64 per https://tools.ietf.org/html/rfc7515#appendix-C
+
+function base64_url_encode($string)
+{
+    $string = base64_encode($string);
+    $string = rtrim($string, '=');
+    $string = strtr($string, '+/', '-_');
+    return $string;
+}
+
+function base64_url_decode($string)
+{
+    $string = strtr($string, '-_', '+/');
+    $padding = strlen($input) % 4;
+    if ($padding !== 0) {
+        $string .= str_repeat('=', 4 - $padding);
+    }
+    $string = base64_decode($string);
+    return $string;
 }
 
 if ((!defined('APP_URL') || APP_URL == '')
