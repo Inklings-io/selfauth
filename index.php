@@ -368,8 +368,9 @@ margin-top:20px;
 border:solid 1px black;
 padding:20px;
 }
-.form-line{ margin-top:5px;}
+.form-line{ margin:5px 0 0 0;}
 .submit{width:100%}
+.yellow{background-color:#FFC}
 
         </style>
     </head>
@@ -392,8 +393,12 @@ padding:20px;
             <div>After login you will be redirected to  <pre><?php echo htmlspecialchars($redirect_uri); ?></pre></div>
             <div class="form-login">
                 <input type="hidden" name="_csrf" value="<?php echo $csrf_code; ?>" />
+                <p class="form-line">
+                    Logging in as:<br />
+                    <span class="yellow"><?php echo htmlspecialchars(USER_URL); ?></span>
+                </p>
                 <div class="form-line">
-                    <label for="password">Password:</label>
+                    <label for="password">Password:</label><br />
                     <input type="password" name="password" id="password" />
                 </div>
                 <div class="form-line">
