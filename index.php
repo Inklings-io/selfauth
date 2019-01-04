@@ -77,15 +77,12 @@ function verify_signed_code($key, $message, $code)
     return hash_equals($signature, $code_parts[1]);
 }
 
-function verify_password($url, $pass)
+function verify_password($pass)
 {
-    $input_user = trim(preg_replace('/^https?:\/\//', '', $url), '/');
+    $hash_user = trim(preg_replace('/^https?:\/\//', '', USER_URL), '/');
+    $hash = md5($hash_user . $pass . APP_KEY);
 
-    $hash = md5($input_user . $pass . APP_KEY);
-
-    $configured_user = trim(preg_replace('/^https?:\/\//', '', USER_URL), '/');
-
-    return ($input_user == $configured_user && hash_equals(USER_HASH, $hash));
+    return hash_equals(USER_HASH, $hash);
 }
 
 function filter_input_regexp($type, $variable, $regexp, $flags = null)
@@ -218,12 +215,6 @@ $state = filter_input_regexp(INPUT_GET, 'state', '@^[\x20-\x7E]*$@');
 $response_type = filter_input_regexp(INPUT_GET, 'response_type', '@^(id|code)?$@');
 $scope = filter_input_regexp(INPUT_GET, 'scope', '@^([\x21\x23-\x5B\x5D-\x7E]+( [\x21\x23-\x5B\x5D-\x7E]+)*)?$@');
 
-if (!is_string($me)) { // me is either omitted or not a valid URL.
-    error_page(
-        'Faulty Request',
-        'There was an error with the request. The "me" field is invalid.'
-    );
-}
 if (!is_string($client_id)) { // client_id is either omitted or not a valid URL.
     error_page(
         'Faulty Request',
@@ -291,7 +282,7 @@ if ($pass_input !== null) {
     }
 
     // Exit if the password does not verify.
-    if (!verify_password($me, $pass_input)) {
+    if (!verify_password($pass_input)) {
         // Optional logging for failed logins.
         //
         // Enabling this on shared hosting may not be a good idea if syslog
@@ -304,7 +295,7 @@ if ($pass_input !== null) {
             ));
         }
 
-        error_page('Login Failed', 'Invalid username or password.');
+        error_page('Login Failed', 'Invalid password.');
     }
 
     $scope = filter_input_regexp(INPUT_POST, 'scopes', '@^[\x21\x23-\x5B\x5D-\x7E]+$@', FILTER_REQUIRE_ARRAY);
@@ -330,7 +321,7 @@ if ($pass_input !== null) {
     }
     $parameters = array(
         'code' => $code,
-        'me' => $me
+        'me' => USER_URL
     );
     if ($state !== null) {
         $parameters['state'] = $state;
@@ -377,8 +368,9 @@ margin-top:20px;
 border:solid 1px black;
 padding:20px;
 }
-.form-line{ margin-top:5px;}
+.form-line{ margin:5px 0 0 0;}
 .submit{width:100%}
+.yellow{background-color:#FFC}
 
         </style>
     </head>
@@ -401,8 +393,12 @@ padding:20px;
             <div>After login you will be redirected to  <pre><?php echo htmlspecialchars($redirect_uri); ?></pre></div>
             <div class="form-login">
                 <input type="hidden" name="_csrf" value="<?php echo $csrf_code; ?>" />
+                <p class="form-line">
+                    Logging in as:<br />
+                    <span class="yellow"><?php echo htmlspecialchars(USER_URL); ?></span>
+                </p>
                 <div class="form-line">
-                    <label for="password">Password:</label>
+                    <label for="password">Password:</label><br />
                     <input type="password" name="password" id="password" />
                 </div>
                 <div class="form-line">
