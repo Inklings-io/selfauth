@@ -184,11 +184,17 @@ if ($code !== null) {
         $response['scope'] = base64_url_decode($code_parts[2]);
     }
 
+    // Accept header
+    $accept_header = '*/*';
+    if (isset($_SERVER['HTTP_ACCEPT']) && strlen($_SERVER['HTTP_ACCEPT']) > 0) {
+        $accept_header = $_SERVER['HTTP_ACCEPT'];
+    }
+
     // Find the q value for application/json.
-    $json = get_q_value('application/json', $_SERVER['HTTP_ACCEPT']);
+    $json = get_q_value('application/json', $accept_header);
 
     // Find the q value for application/x-www-form-urlencoded.
-    $form = get_q_value('application/x-www-form-urlencoded', $_SERVER['HTTP_ACCEPT']);
+    $form = get_q_value('application/x-www-form-urlencoded', $accept_header);
 
     // Respond in the correct way.
     if ($json === 0 && $form === 0) {
