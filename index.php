@@ -132,7 +132,7 @@ function get_q_value($mime, $accept)
 
 function base64_url_encode($string)
 {
-    $string = base64_encode($string);
+    $string = base64_encode($string ?? '');
     $string = rtrim($string, '=');
     $string = strtr($string, '+/', '-_');
     return $string;
