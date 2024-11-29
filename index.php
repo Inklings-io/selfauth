@@ -309,8 +309,10 @@ if ($pass_input !== null) {
     } else {
         $final_redir .= '&';
     }
+    $issuer = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_NAME'];
     $parameters = array(
         'code' => $code,
+        'iss' => $issuer,
         'me' => USER_URL
     );
     if ($state !== null) {
