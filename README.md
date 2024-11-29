@@ -40,6 +40,16 @@ On a (Web)App which supports [IndieAuth](https://indieweb.org/IndieAuth), you ca
 To test it, you can go to an App that supports IndieAuth and enter your personal URL. [IndieAuth.com](https://indieauth.com/) has a test-form on the frontpage. If you also link to your social media accounts using `rel="me"`, IndieAuth.com might show you a list of buttons.  To use Selfauth, click the one that has your Selfauth URL on it.
 
 
+## Apache Support
+
+When running this under [Apache HTTPd](https://httpd.apache.org/), the process must be authorized to have access to the file or SelfAuth will print the config to the webpage and you will have to manually copy the content onto the filesystem.
+```bash
+# enable Apache group to be authorized for config.php
+touch config.php
+chgrp www-data config.php
+```
+
+
 ## License
 
 Copyright 2017 by Ben Roberts and contributors
