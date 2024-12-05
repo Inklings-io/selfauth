@@ -29,22 +29,9 @@ You can delete the file `setup.php` if you want, but this is optional. It will n
 
 
 ### Multi-User Support
-By default, only single users are supported. To enable multiple users to share `setup.php` and `index.php`, set the environment variable `SELFAUTH_MULTIUSER` to `true`. When this is enabled, it will detect the preceding fragment as the username (e.g. https://example.com/auth/myuser/setup.php will be `myuser.php`). You will need to configure your server to map multiple URLs to the same CGI.
+By default, only single users are supported. To enable multiple users with `setup.php` and `index.php`, set the environment variable `SELFAUTH_MULTIUSER` to `true`. When this is enabled, it store the config encoded with the user URI (e.g. entering `https://example.com/user/myuser/` will save the config as `config_https%3A%2F%2Fexample.com%2Fuser%2Fmyuser%2F.php`).
 
-Optionally you can set the environment variable `SELFAUTH_CONFIG` to the directory you wish to store your user config `user.php` files in. Ensure that the server has the permissions to create files in this directory.
-
-An [Apache HTTPd](https://httpd.apache.org/) example is
-```
-	AliasMatch /auth/multi/\w+/setup.php "/usr/local/src/selfauth/setup.php"
-	AliasMatch /auth/multi/\w+/index.php "/usr/local/src/selfauth/index.php"
-	<Location /auth/multi/>
-		SetEnv SELFAUTH_MULTIUSER true
-		SetEnv SELFAUTH_CONFIG /var/lib/selfauth
-		<RequireAll>
-			Require all granted
-		</RequireAll>
-	</Location>
-```
+Optionally you can set the environment variable `SELFAUTH_CONFIG` to the directory you wish to store your user config `config*.php` files in. Ensure that the server has the permissions to create files in this directory.
 
 
 ## Changing your password

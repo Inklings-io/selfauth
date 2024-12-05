@@ -27,37 +27,6 @@ HTML;
     die($html);
 }
 
-$app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST']
-  . str_replace('index.php', '', $_SERVER['REQUEST_URI']);
-
-$configdir = getenv('SELFAUTH_CONFIG');
-if (empty($configdir)) {
-    $configdir = __DIR__;
-}
-if (getenv('SELFAUTH_MULTIUSER')) {
-    $app_url_parts = explode('/', $app_url);
-    $parts_count = count($app_url_parts);
-    $app_user = $app_url_parts[$parts_count-1];
-    // case of ending slash (/)
-    if (empty($app_user)) {
-        $app_user = $app_url_parts[$parts_count-2];
-    }
-    $userfile = "$app_user.php";
-}
-else {
-    $userfile = 'config.php';
-}
-$configfile = $configdir . '/' . $userfile;
-
-if (file_exists($configfile)) {
-    include_once $configfile;
-} else {
-    error_page(
-        'Configuration Error',
-        'Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.'
-    );
-}
-
 // Enable string comparison in constant time.
 if (!function_exists('hash_equals')) {
     function hash_equals($known_string, $user_string)
@@ -170,15 +139,39 @@ function base64_url_decode($string)
     return $string;
 }
 
-if ((!defined('APP_URL') || APP_URL == '')
-    || (!defined('APP_KEY') || APP_KEY == '')
-    || (!defined('USER_HASH') || USER_HASH == '')
-    || (!defined('USER_URL') || USER_URL == '')
-) {
-    error_page(
-        'Configuration Error',
-        'Endpoint not configured correctly, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.'
-    );
+function load_user_config($configdir, $user_uri_encoded_filename): void {
+    if (getenv('SELFAUTH_MULTIUSER')) {
+        $userfile = $user_uri_encoded_filename;
+    }
+    else {
+        $userfile = 'config.php';
+    }
+    $configfile = $configdir . '/' . $userfile;
+
+    if (file_exists($configfile)) {
+        include_once $configfile;
+    } else {
+        error_page(
+            'Configuration Error',
+            'Endpoint not yet configured, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.'
+        );
+    }
+
+    if ((!defined('APP_URL') || APP_URL == '')
+        || (!defined('APP_KEY') || APP_KEY == '')
+        || (!defined('USER_HASH') || USER_HASH == '')
+        || (!defined('USER_URL') || USER_URL == '')
+    ) {
+        error_page(
+            'Configuration Error',
+            'Endpoint not configured correctly, visit <a href="setup.php">setup.php</a> for instructions on how to set it up.'
+        );
+    }
+}
+
+$configdir = getenv('SELFAUTH_CONFIG');
+if (empty($configdir)) {
+    $configdir = __DIR__;
 }
 
 // First handle verification of codes.
@@ -188,12 +181,32 @@ if ($code !== null) {
     $redirect_uri = filter_input(INPUT_POST, 'redirect_uri', FILTER_VALIDATE_URL);
     $client_id = filter_input(INPUT_POST, 'client_id', FILTER_VALIDATE_URL);
 
+    // Scan through the existing users then
     // Exit if there are errors in the client supplied data.
-    if (!(is_string($code)
-        && is_string($redirect_uri)
-        && is_string($client_id)
-        && verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code))
-    ) {
+    $user_files = scandir($configdir);
+    $user_verified = false;
+    foreach ($user_files as $user_file) {
+        // make sure we are only looking at proper config files
+        // when single-user, this will only ever be one file
+        // when multi-user, this will be the user files
+        if (preg_match('/^config(_\.+)?\.php$/', $user_file) !== 1) {
+            continue;
+        }
+        load_user_config($configdir, $user_file);
+        if (!(is_string($code)
+            && is_string($redirect_uri)
+            && is_string($client_id)
+            && verify_signed_code(APP_KEY, USER_URL . $redirect_uri . $client_id, $code))
+        ) {
+            // NOT valid for this user
+            continue;
+        }
+        else {
+            $user_verified = true;
+            break;
+        }
+    }
+    if ($user_verified !== true) {
         error_page('Verification Failed', 'Given Code Was Invalid');
     }
 
@@ -236,6 +249,7 @@ if ($code !== null) {
 // If this is not verification, collect all the client supplied data. Exit on errors.
 
 $me = filter_input(INPUT_GET, 'me', FILTER_VALIDATE_URL);
+load_user_config($configdir, 'config_'.rawurlencode($me).'.php');
 $client_id = filter_input(INPUT_GET, 'client_id', FILTER_VALIDATE_URL);
 $redirect_uri = filter_input(INPUT_GET, 'redirect_uri', FILTER_VALIDATE_URL);
 $state = filter_input_regexp(INPUT_GET, 'state', '@^[\x20-\x7E]*$@');

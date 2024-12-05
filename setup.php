@@ -50,20 +50,16 @@ if (empty($configdir)) {
     $configdir = __DIR__;
 }
 if (getenv('SELFAUTH_MULTIUSER')) {
-    $app_url_parts = explode('/', $app_url);
-    $parts_count = count($app_url_parts);
-    $app_user = $app_url_parts[$parts_count-1];
-    // case of ending slash (/)
-    if (empty($app_user)) {
-        $app_user = $app_url_parts[$parts_count-2];
+    $userfile = '.php';
+    if (isset($_POST['username'])) {
+        $app_user = rawurlencode($_POST['username']);
+        $userfile = "config_$app_user.php";
     }
-    $userfile = "$app_user.php";
 }
 else {
     $userfile = 'config.php';
 }
 $configfile = $configdir . '/' . $userfile;
-file_put_contents('/opt/log/phperror.log', "SelfAuth: config: $configfile\n", FILE_APPEND);
 
 $configured = true;
 
