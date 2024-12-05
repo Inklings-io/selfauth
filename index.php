@@ -27,7 +27,28 @@ HTML;
     die($html);
 }
 
-$configfile= __DIR__ . '/config.php';
+$app_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST']
+  . str_replace('index.php', '', $_SERVER['REQUEST_URI']);
+
+$configdir = getenv('SELFAUTH_CONFIG');
+if (empty($configdir)) {
+    $configdir = __DIR__;
+}
+if (getenv('SELFAUTH_MULTIUSER')) {
+    $app_url_parts = explode('/', $app_url);
+    $parts_count = count($app_url_parts);
+    $app_user = $app_url_parts[$parts_count-1];
+    // case of ending slash (/)
+    if (empty($app_user)) {
+        $app_user = $app_url_parts[$parts_count-2];
+    }
+    $userfile = "$app_user.php";
+}
+else {
+    $userfile = 'config.php';
+}
+$configfile = $configdir . '/' . $userfile;
+
 if (file_exists($configfile)) {
     include_once $configfile;
 } else {

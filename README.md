@@ -28,6 +28,25 @@ To set up Selfauth, create a folder on your webserver and add the files in this 
 You can delete the file `setup.php` if you want, but this is optional. It will not be able to save a new password for you once the setup is completed.
 
 
+### Multi-User Support
+By default, only single users are supported. To enable multiple users to share `setup.php` and `index.php`, set the environment variable `SELFAUTH_MULTIUSER` to `true`. When this is enabled, it will detect the preceding fragment as the username (e.g. https://example.com/auth/myuser/setup.php will be `myuser.php`). You will need to configure your server to map multiple URLs to the same CGI.
+
+Optionally you can set the environment variable `SELFAUTH_CONFIG` to the directory you wish to store your user config `user.php` files in. Ensure that the server has the permissions to create files in this directory.
+
+An [Apache HTTPd](https://httpd.apache.org/) example is
+```
+	AliasMatch /auth/multi/\w+/setup.php "/usr/local/src/selfauth/setup.php"
+	AliasMatch /auth/multi/\w+/index.php "/usr/local/src/selfauth/index.php"
+	<Location /auth/multi/>
+		SetEnv SELFAUTH_MULTIUSER true
+		SetEnv SELFAUTH_CONFIG /var/lib/selfauth
+		<RequireAll>
+			Require all granted
+		</RequireAll>
+	</Location>
+```
+
+
 ## Changing your password
 
 To change your password, make sure the `setup.php` file is in place again and delete `config.php`. Then follow the steps under [Setup](#setup) again.
