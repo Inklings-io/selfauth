@@ -309,7 +309,7 @@ if ($pass_input !== null) {
     } else {
         $final_redir .= '&';
     }
-    $issuer = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_NAME'];
+    $issuer = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
     $parameters = array(
         'code' => $code,
         'iss' => $issuer,
