@@ -189,7 +189,7 @@ if ($code !== null) {
         // make sure we are only looking at proper config files
         // when single-user, this will only ever be one file
         // when multi-user, this will be the user files
-        if (preg_match('/^config(_\.+)?\.php$/', $user_file) !== 1) {
+        if (preg_match('/^config(_.+)?\.php$/', $user_file) !== 1) {
             continue;
         }
         load_user_config($configdir, $user_file);
