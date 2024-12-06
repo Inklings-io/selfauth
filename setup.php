@@ -45,7 +45,21 @@ if (function_exists('random_bytes')) {
 }
 $app_key = bin2hex($bytes);
 
-$configfile= __DIR__ . '/config.php';
+$configdir = getenv('SELFAUTH_CONFIG');
+if (empty($configdir)) {
+    $configdir = __DIR__;
+}
+if (getenv('SELFAUTH_MULTIUSER')) {
+    $userfile = '.php';
+    if (isset($_POST['username'])) {
+        $app_user = rawurlencode($_POST['username']);
+        $userfile = "config_$app_user.php";
+    }
+}
+else {
+    $userfile = 'config.php';
+}
+$configfile = $configdir . '/' . $userfile;
 
 $configured = true;
 
@@ -66,7 +80,7 @@ if (file_exists($configfile)) {
 if ($configured) : ?>
     <h2>System already configured</h2>
     <div class="instructions">
-        If you with to reconfigure, please remove config.php and reload this page.
+        If you with to reconfigure, please remove <?php $userfile ?> and reload this page.
     </div>
 
 <?php else : ?>
@@ -96,7 +110,9 @@ define('USER_URL', '$user');";
 
     $file_written = false;
 
-    if (is_writeable($configfile) && !$configured) {
+    $file_exists_and_can_be_written = file_exists($configfile) && is_writeable($configfile);
+    $file_not_exist_but_dir_can_be_written = !file_exists($configfile) && is_writeable($configdir);
+    if (!$configured && ($file_exists_and_can_be_written || $file_not_exist_but_dir_can_be_written)) {
         $handle = fopen($configfile, 'w');
 
         if ($handle) {
@@ -111,9 +127,9 @@ define('USER_URL', '$user');";
 
 
     if ($file_written) {
-        echo '<div class="message">config.php was successfully written to disk</div>';
+        echo '<div class="message">'.$userfile.' was successfully written to disk</div>';
     } else {
-        echo '<div class="message">Fill in the file config.php with the following content</div>';
+        echo '<div class="message">Fill in the file '.$userfile.' with the following content</div>';
         echo '<pre>';
         echo htmlentities($config_file_contents);
         echo '</pre>';
