@@ -309,8 +309,10 @@ if ($pass_input !== null) {
     } else {
         $final_redir .= '&';
     }
+    $issuer = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
     $parameters = array(
         'code' => $code,
+        'iss' => $issuer,
         'me' => USER_URL
     );
     if ($state !== null) {
