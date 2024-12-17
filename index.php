@@ -339,6 +339,29 @@ if ($pass_input !== null) {
 
 $csrf_code = create_signed_code(APP_KEY, $client_id . $redirect_uri . $state, 2 * 60);
 
+function client_info(string $client_id) : ?array {
+    if (function_exists('curl_init') !== true) {
+        return null;
+    }
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $client_id);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, false);
+    curl_setopt($curl, CURLOPT_TIMEOUT_MS, round(4 * 1000));
+    curl_setopt($curl, CURLOPT_CONNECTTIMEOUT_MS, 2000);
+    curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    $body = curl_exec($curl);
+    curl_close($curl);
+    $info = json_decode($body, true, 3);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return null;
+    }
+    return $info;
+}
+
+$client_meta = client_info($client_id);
+
 ?><!doctype html>
 <html>
     <head>
@@ -347,6 +370,8 @@ $csrf_code = create_signed_code(APP_KEY, $client_id . $redirect_uri . $state, 2 
 h1{text-align:center;margin-top:3%;}
 body {text-align:center;}
 fieldset, pre {width:400px; margin-left:auto; margin-right:auto;margin-bottom:50px; background-color:#FFC; min-height:1em;}
+.client-title {width:400px; margin-left:auto; margin-right:auto; min-height:1em;}
+.client-meta {width:400px; margin-left:auto; margin-right:auto;margin-bottom:50px; min-height:1em;}
 fieldset {text-align:left;}
 
 .form-login{ 
@@ -368,6 +393,17 @@ padding:20px;
         <form method="POST" action="">
             <h1>Authenticate</h1>
             <div>You are attempting to login with client <pre><?php echo htmlspecialchars($client_id); ?></pre></div>
+            <?php if (isset($client_meta)) : ?>
+            <div class="client-title">
+                <img src="<?php echo htmlspecialchars($client_meta['client_logo']) ?>" alt="[logo]" />
+                <span><?php echo htmlspecialchars($client_meta['client_name']) ?></span>
+            </div>
+            <div class="client-meta">
+                <a href="<?php echo htmlspecialchars($client_meta['client_uri']) ?>">Webpage</a>
+                <a href="<?php echo htmlspecialchars($client_meta['client_tos']) ?>">Terms of Service</a>
+                <a href="<?php echo htmlspecialchars($client_meta['client_policy']) ?>">Privacy Policy</a>
+            </div>
+            <?php endif; ?>
             <?php if (strlen($scope) > 0) : ?>
             <div>It is requesting the following scopes, uncheck any you do not wish to grant:</div>
             <fieldset>
