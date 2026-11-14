@@ -411,7 +411,7 @@ padding:20px;
                 <?php foreach (explode(' ', $scope) as $n => $checkbox) : ?>
                 <div>
                     <input id="scope_<?php echo $n; ?>" type="checkbox" name="scopes[]" value="<?php echo htmlspecialchars($checkbox); ?>" checked>
-                    <label for="scope_<?php echo $n; ?>"><?php echo $checkbox; ?></label>
+                    <label for="scope_<?php echo $n; ?>"><?php echo htmlspecialchars($checkbox); ?></label>
                 </div>
                 <?php endforeach; ?>
             </fieldset>
